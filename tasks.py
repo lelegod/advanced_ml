@@ -1,12 +1,11 @@
 import os
+import shutil
 from invoke import Context, task
 
 WINDOWS = os.name == "nt"
 PYTHON_VERSION = "3.12"
 COURSE_NAME = "advanced_ml"
 SPECIAL_PACKAGES = ["torch torchvision --index-url https://download.pytorch.org/whl/cu126" if shutil.which("nvidia-smi") else "torch torchvision"]
-
-import shutil
 
 @task
 def install(c: Context):
