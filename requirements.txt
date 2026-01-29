@@ -1,0 +1,8 @@
+invoke
+pytest
+numpy
+pandas
+matplotlib
+scipy
+# torch is installed in via invoke task
+seaborn
