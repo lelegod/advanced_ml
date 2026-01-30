@@ -1,0 +1,47 @@
+\subsubsection*{Exercise 1.1}
+
+Let $\textbf{M} = \textbf{W}\textbf{W}^T+\sigma^2\textbf{I}$, we can write $p(\textbf{x}_n|\sigma^2, \textbf{b}, \textbf{W})$ using multivariate Gaussian distribution:
+
+\begin{align*}
+    p(\textbf{x}_n|\sigma^2, \textbf{b}, \textbf{W}) & = \mathcal{N}(\textbf{x}_n|\textbf{b}, \textbf{M})                                                                              \\
+                                                     & = \frac{1}{\sqrt{(2\pi)^N|\textbf{M}|}} \exp\left(-\frac{1}{2}(\textbf{x}_n-\textbf{b})^T\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right)
+\end{align*}
+
+Substituting this expression into the log-likelihood function:
+\begin{align*}
+    \ell & = \ln p(\mathbf{X}|\sigma^2, \textbf{b}, \textbf{W}) \\
+    & = \sum_{n=1}^{N}\ln \left[ \frac{1}{\sqrt{(2\pi)^D|\textbf{M}|}} \exp\left(-\frac{1}{2}(\textbf{x}_n-\textbf{b})^T\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right) \right]                                                      \\
+    & = \sum_{n=1}^{N} \ln\left[\frac{1}{\sqrt{(2\pi)^D|\textbf{M}|}}\right] - \frac{1}{2} \sum_{n=1}^{N} \left[(\textbf{x}_n-\textbf{b})^T\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right]                                           \\
+    & = -\frac{D}{2} \sum_{n=1}^{N} \ln\left(\sqrt{2\pi}\right) - \sum_{n=1}^{N} \ln\left(|\textbf{M}|\right) - \frac{1}{2} \sum_{n=1}^{N} \left[(\textbf{x}_n-\textbf{b})^T\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right] \\
+    & = -\frac{ND}{2} \ln(2\pi) - \frac{N}{2} \ln(|\textbf{M}|) - \frac{1}{2} \sum_{n=1}^{N} \left[(\textbf{x}_n-\textbf{b})^T\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right]                                               \\
+\end{align*}
+
+We first take the derivative of $\ell$ w.r.t. $\textbf{b}$:
+
+\begin{align*}
+    \frac{\partial \ell}{\partial \textbf{b}} &  =
+    -\frac{1}{2} \sum_{n=1}^{N} \frac{\partial}{\partial \textbf{b}} \left[(\textbf{x}_n-\textbf{b})^T\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right]
+\end{align*}
+
+Applying the Hint, we can simplify the expression to:
+
+\begin{align*}
+    \frac{\partial \ell}{\partial \textbf{b}} & = -\frac{1}{2}\sum_{n=1}^{N}\left(-2\textbf{M}^{-1}(\textbf{x}_n-\textbf{b})\right) \\
+                                              & = \textbf{M}^{-1} \sum_{n=1}^{N} (\textbf{x}_n-\textbf{b})
+\end{align*}
+
+To get the maximum log-likelihood estimate of $\hat{\textbf{b}}$, 
+we solve $\frac{\partial \ell}{\partial \textbf{b}} = 0$:
+
+\begin{align*}
+    \sum_{n=1}^{N}\textbf{M}^{-1}(\textbf{x}-\hat{\textbf{b}}) & = 0
+\end{align*}
+
+Since $\textbf{M}$ is a positive definite matrix:
+
+\begin{align*}
+    & \sum_{n=1}^{N} \textbf{x}_n - N\hat{\textbf{b}} = 0 \\
+    & \sum_{n=1}^{N} \textbf{x}_n =  N\hat{\textbf{b}} \\
+    & \hat{\textbf{b}} = \frac{1}{N} \sum_{n=1}^{N} \textbf{x}_n \\
+    & \therefore \hat{\textbf{b}} = \bar{\textbf{x}}
+\end{align*}
