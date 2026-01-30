@@ -6,9 +6,9 @@ WINDOWS = os.name == "nt"
 PYTHON_VERSION = "3.12"
 COURSE_NAME = "advanced_machine_learning"
 SPECIAL_PACKAGES = [
-    "torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"
+    "torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 --no-cache-dir"
     if shutil.which("nvidia-smi")
-    else "torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu"
+    else "torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu --no-cache-dir"
 ]
 
 @task
