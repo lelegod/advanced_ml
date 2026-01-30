@@ -1,15 +1,15 @@
 {
   "template": "https://github.com/lelegod/cookiecutter-course-template.git",
-  "commit": "14a1441d46be92398c93ad481f5317ab5b40900b",
+  "commit": "da027542579fd56060cf9c40b98947840d28cce7",
   "checkout": null,
   "context": {
     "cookiecutter": {
-      "project_name": "advanced ml",
-      "project_slug": "advanced_ml",
+      "project_name": "Advanced Machine Learning",
+      "project_slug": "advanced_machine_learning",
       "author_name": "Kyle Nathan Yahya",
       "python_version": "3.12",
       "_template": "https://github.com/lelegod/cookiecutter-course-template.git",
-      "_commit": "14a1441d46be92398c93ad481f5317ab5b40900b"
+      "_commit": "da027542579fd56060cf9c40b98947840d28cce7"
     }
   },
   "directory": null

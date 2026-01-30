@@ -1,53 +1,53 @@
-# Advanced Machine Learning - DTU
+# Advanced Machine Learning
 
-This repository contains notes and exercises for the **Advanced Machine Learning** course at DTU.
+Notes and solutions for the **Advanced Machine Learning** course.
 
 **Author:** Kyle Nathan Yahya
 
-## 📂 Project Structure
-
-- `notes/`: LaTeX source files for course notes.
-- `week{n}/`: Exercises and solutions for each week.
-- `tasks.py`: Automation scripts for environment management.
+---
 
 ## 🚀 Setup & Installation
 
-This project uses **Conda** for environment management and **Invoke** for task automation.
+### 1. Python Environment
+This project manages dependencies using `conda` and `invoke`.
 
-### 1. Prerequisites
-Ensure you have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/) installed.
+1. **Install Conda** (if not already installed).
+2. **Create the environment**:
+   ```bash
+   invoke create-env
+   ```
+3. **Install dependencies**:
+   ```bash
+   invoke install
+   ```
+   *Note: This automatically installs packages from `requirements.txt`.*
 
-### 2. Create the Environment
-To create the conda environment (`advanced_ml`) with Python 3.12 and install base dependencies:
+### 2. LaTeX Setup (for Notes)
 
-```bash
-invoke create-env
-```
+To edit and compile the LaTeX notes (`notes/main.tex`) in VS Code, follow these steps:
 
-If you prefer to create the environment in a specific path (local folder):
+#### **Step 1: Install TeX Live**
+You need a TeX distribution to compile `.tex` files.
+- **Windows**: Download [TeX Live](https://tug.org/texlive/acquire-netinstall.html) (install-tl-windows.exe).
+  - *Tip: The full installation is large (~5GB+). You can choose a smaller scheme if you only need basic functionality, but "Full" is safest.*
+- **Mac**: Install [MacTeX](https://tug.org/mactex/).
+- **Linux**: `sudo apt install texlive-full` (or equivalent).
 
-```bash
-invoke create-env --path .
-```
+#### **Step 2: Install VS Code Extension**
+Install the **LaTeX Workshop** extension by James Yu.
+- Open VS Code Extensions (`Ctrl+Shift+X`).
+- Search for `LaTeX Workshop`.
+- Click **Install**.
 
-### 3. Install Dependencies
-To install the required Python packages (including GPU-accelerated PyTorch if available):
+#### **Step 3: Usage**
+- Open `notes/main.tex`.
+- The extension should automatically build the PDF on save (configured in `.vscode/settings.json`).
+- View the PDF by clicking the "View LaTeX PDF" icon in the top right or pressing `Ctrl+Alt+V`.
+- **Formatting**: The project is configured to use `latexindent`. You can format the document using `Shift+Alt+F`.
 
-```bash
-invoke install
-```
+---
 
-> **Note:** The script automatically detects if `nvidia-smi` is available and installs the appropriate PyTorch version (CUDA 12.6 for GPU or CPU-only).
-
-## 📝 Usage
-
-### Running Exercises
-Activate the environment and launch Jupyter Lab:
-
-```bash
-conda activate advanced_ml
-jupyter lab
-```
-
-### Building Notes
-Dependencies for compiling the LaTeX notes can be found in `notes/`.
+## 📂 Project Structure
+- `notes/`: LaTeX notes and weekly summaries.
+- `tasks.py`: Automation scripts.
+- `requirements.txt`: Python dependencies.
