@@ -11,12 +11,21 @@ Notes and solutions for the **Advanced Machine Learning** course.
 ### 1. Python Environment
 This project manages dependencies using `conda` and `invoke`.
 
-1. **Install Conda** (if not already installed).
-2. **Create the environment**:
+1. **Install Conda**:
+   Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/products/distribution).
+2. **Install invoke**:
+   ```
+   pip install invoke
+   ```
+3. **Create the environment**:
    ```bash
    invoke create-env
    ```
-3. **Install dependencies**:
+   You can also specify the path:
+   ```bash
+   invoke create-env --path <FOLDER_PATH>
+   ```
+4. **Install dependencies**:
    ```bash
    invoke install
    ```

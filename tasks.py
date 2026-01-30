@@ -45,6 +45,6 @@ def create_env(c: Context, path=None):
 def sync(c: Context):
     """Sync the project with the template using cruft."""
     if os.environ.get("CONDA_DEFAULT_ENV") == COURSE_NAME:
-        c.run("cruft update", echo=True, pty=not WINDOWS)
-    else:
         c.run(f"conda run -n {COURSE_NAME} cruft update", echo=True, pty=not WINDOWS)
+    else:
+        c.run("cruft update", echo=True, pty=not WINDOWS)
