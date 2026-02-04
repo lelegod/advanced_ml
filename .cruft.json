@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/lelegod/cookiecutter-course-template.git",
-  "commit": "9cebb546dbc8ed76e6088216f5dc4b4e6e161fb8",
+  "commit": "4081730e723679bdc2181f1e23ceb2ca32f81e9b",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -9,7 +9,7 @@
       "author_name": "Kyle Nathan Yahya",
       "python_version": "3.12",
       "_template": "https://github.com/lelegod/cookiecutter-course-template.git",
-      "_commit": "9cebb546dbc8ed76e6088216f5dc4b4e6e161fb8"
+      "_commit": "4081730e723679bdc2181f1e23ceb2ca32f81e9b"
     }
   },
   "directory": null
