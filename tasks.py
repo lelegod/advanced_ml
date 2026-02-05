@@ -48,3 +48,61 @@ def sync(c: Context):
         c.run(f"conda run -n {COURSE_NAME} cruft update", echo=True, pty=not WINDOWS)
     else:
         c.run("cruft update", echo=True, pty=not WINDOWS)
+
+@task
+def hpc_get(c: Context, week_num: int, file_name: str):
+    """Transfer files from HPC to local"""
+    hpc_path = f"Documents/{COURSE_NAME}/week{week_num}/{file_name}"
+    if not WINDOWS:
+        local_path = f"/Users/kyleelyk/Documents/DTU/SEM2/{COURSE_NAME}/week{week_num}/{file_name}"
+    c.run(f"scp s252786@login.hpc.dtu.dk:{hpc_path} {local_path}", echo=True, pty=not WINDOWS)
+
+@task
+def hpc_post(c: Context, week_num: int, file_name: str):
+    """Send files from local to HPC"""
+    hpc_path = f"Documents/{COURSE_NAME}/week{week_num}/{file_name}"
+    if not WINDOWS:
+        local_path = f"/Users/kyleelyk/Documents/DTU/SEM2/{COURSE_NAME}/week{week_num}/{file_name}"
+    c.run(f"scp {local_path} s252786@login.hpc.dtu.dk:{hpc_path}", echo=True, pty=not WINDOWS)
+
+
+@task(help={'folder': 'Folder path to list files from (e.g., week1/question_scripts)'})
+def run_file(c: Context, folder: str):
+    """List files in a folder and run the selected one."""
+    from simple_term_menu import TerminalMenu
+    
+    if not os.path.isabs(folder):
+        folder_path = os.path.join(os.getcwd(), folder)
+    else:
+        folder_path = folder
+    
+    if not os.path.exists(folder_path):
+        print(f"Error: Folder '{folder}' does not exist.")
+        return
+    
+    files = [f for f in os.listdir(folder_path) if f.endswith('.py')]
+    
+    if not files:
+        print(f"No Python files found in '{folder}'")
+        return
+    
+    files.sort()
+    
+    # Interactive menu
+    print(f"Select a file to run from {folder}:")
+    print("(Use ↑/↓ arrow keys to navigate, Enter to select, q to quit)\n")
+    
+    terminal_menu = TerminalMenu(files, title="Python Files:")
+    menu_index = terminal_menu.show()
+    
+    if menu_index is None:
+        print("Cancelled.")
+        return
+    
+    selected_file = files[menu_index]
+    file_path = os.path.join(folder_path, selected_file)
+    
+    if os.environ.get("CONDA_DEFAULT_ENV") == COURSE_NAME:
+        c.run(f"python {file_path}", echo=True, pty=not WINDOWS)
+    else:
+        c.run(f"conda run -n {COURSE_NAME} python {file_path}", echo=True, pty=not WINDOWS)
