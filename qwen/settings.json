@@ -1,0 +1,9 @@
+{
+  "model": {
+    "name": "qwen3-coder-plus",
+    "generationConfig": {
+      "temperature": 0.1,
+      "top_p": 0.95
+    }
+  }
+}
