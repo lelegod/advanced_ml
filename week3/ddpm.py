@@ -44,10 +44,27 @@ class DDPM(nn.Module):
         [torch.Tensor]
             The negative ELBO of the batch of dimension `(batch_size,)`.
         """
-
-        ### Implement Algorithm 1 here ###
-        neg_elbo = 0
-
+        batch_size = x.shape[0]
+        device = x.device
+        
+        # Sample t uniformly from {1, ..., T} for each data point
+        t = torch.randint(1, self.T + 1, (batch_size,), device=device, dtype=torch.long)
+        
+        # Sample epsilon (noise)
+        epsilon = torch.randn_like(x)
+        
+        # Compute alpha_cumprod for the sampled t
+        alpha_cumprod_t = self.alpha_cumprod[t-1].view(-1, *([1] * (x.dim() - 1)))
+        
+        # Compute x_t using the forward diffusion process: x_t = sqrt(alpha_cumprod_t) * x_0 + sqrt(1 - alpha_cumprod_t) * epsilon
+        x_t = torch.sqrt(alpha_cumprod_t) * x + torch.sqrt(1 - alpha_cumprod_t) * epsilon
+        
+        # Predict epsilon using the network
+        epsilon_pred = self.network(x_t, t.float().view(-1, 1))
+        
+        # Compute negative ELBO as MSE between true and predicted noise
+        neg_elbo = torch.mean((epsilon - epsilon_pred) ** 2, dim=tuple(range(1, x.dim())))
+        
         return neg_elbo
 
     def sample(self, shape):
@@ -66,8 +83,35 @@ class DDPM(nn.Module):
 
         # Sample x_t given x_{t+1} until x_0 is sampled
         for t in range(self.T-1, -1, -1):
-            ### Implement the remaining of Algorithm 2 here ###
-            pass
+            # Create time tensor for the network
+            t_tensor = torch.full((shape[0],), t + 1, device=self.alpha.device, dtype=torch.float).view(-1, 1)
+            
+            # Predict epsilon using the network
+            epsilon_pred = self.network(x_t, t_tensor)
+            
+            # Get alpha and alpha_cumprod for current timestep
+            alpha_t = self.alpha[t].view(-1, *([1] * (x_t.dim() - 1)))
+            alpha_cumprod_t = self.alpha_cumprod[t].view(-1, *([1] * (x_t.dim() - 1)))
+            
+            # Compute x_{t-1} from x_t
+            # For t > 0: x_{t-1} = (1/sqrt(alpha_t)) * (x_t - (1-alpha_t)/sqrt(1-alpha_cumprod_t) * epsilon_pred) + sigma_t * z
+            # For t = 0: no noise term
+            if t > 0:
+                beta_t = self.beta[t]
+                sigma_t = torch.sqrt(beta_t)
+                z = torch.randn_like(x_t)
+            else:
+                sigma_t = 0
+                z = 0
+            
+            # Compute the mean of the reverse distribution
+            x_t_minus_1 = (1 / torch.sqrt(alpha_t)) * (x_t - ((1 - alpha_t) / torch.sqrt(1 - alpha_cumprod_t)) * epsilon_pred)
+            
+            # Add noise if t > 0
+            if t > 0:
+                x_t_minus_1 = x_t_minus_1 + sigma_t * z
+            
+            x_t = x_t_minus_1
 
         return x_t
 
