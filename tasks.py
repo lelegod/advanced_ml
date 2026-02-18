@@ -36,7 +36,7 @@ def create_env(c: Context, path=None):
         c.run(f'"{pip_exe}" install -r requirements.txt', echo=True, pty=not WINDOWS)
         c.run(f'"{pip_exe}" install -r requirements_project.txt', echo=True, pty=not WINDOWS)
         if SPECIAL_PACKAGES:
-            c.run(f'"{pip_exe}" install {' '.join(SPECIAL_PACKAGES)}', echo=True, pty=not WINDOWS)
+            c.run(f'"{pip_exe}" install {" ".join(SPECIAL_PACKAGES)}', echo=True, pty=not WINDOWS)
     else:
         c.run(f'conda create -n {COURSE_NAME} python={PYTHON_VERSION} pip --no-default-packages --yes', echo=True, pty=not WINDOWS)
         c.run(f"conda run -n {COURSE_NAME} pip install -r requirements.txt", echo=True, pty=not WINDOWS)
@@ -58,6 +58,8 @@ def hpc_get(c: Context, week_num: int, file_name: str):
     hpc_path = f"Documents/{COURSE_NAME}/week{week_num}/{file_name}"
     if not WINDOWS:
         local_path = f"/Users/kyleelyk/Documents/DTU/SEM2/{COURSE_NAME}/week{week_num}/{file_name}"
+    else:
+        local_path = f"week{week_num}/{file_name}"
     c.run(f"scp s252786@login.hpc.dtu.dk:{hpc_path} {local_path}", echo=True, pty=not WINDOWS)
 
 @task
@@ -66,6 +68,8 @@ def hpc_post(c: Context, week_num: int, file_name: str):
     hpc_path = f"Documents/{COURSE_NAME}/week{week_num}/{file_name}"
     if not WINDOWS:
         local_path = f"/Users/kyleelyk/Documents/DTU/SEM2/{COURSE_NAME}/week{week_num}/{file_name}"
+    else:
+        local_path = f"week{week_num}/{file_name}"
     c.run(f"scp {local_path} s252786@login.hpc.dtu.dk:{hpc_path}", echo=True, pty=not WINDOWS)
 
 @task(help={'folder': 'Folder path to list files from (e.g., week1/question_scripts)'})
