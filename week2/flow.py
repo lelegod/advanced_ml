@@ -67,14 +67,13 @@ class MaskedCouplingLayer(nn.Module):
         sum_log_det_J: [torch.Tensor]
             The sum of the log determinants of the Jacobian matrices of the forward transformations of dimension `(batch_size, feature_dim)`.
         """
-        # Apply affine coupling transformation: x = z * exp(s) + t
-        # where s and t are computed from the masked part of z
-        s = self.scale_net(z * (1 - self.mask))
-        t = self.translation_net(z * (1 - self.mask))
-        x = z * torch.exp(s * self.mask) + t * self.mask
+        # Formula z_prime = b * z + (1 - b) * (z * exp(s) + t)
+        s = self.scale_net(self.mask * z)
+        t = self.translation_net(self.mask * z)
+        x = self.mask * z + (1 - self.mask) * (z * torch.exp(s) + t)
         
-        # Compute log determinant of Jacobian: sum of s for masked dimensions
-        log_det_J = torch.sum(s * self.mask, dim=1)
+        # Formula log|DetJ_T(z)| = sum_d=1^D[(1 - b_i)s_i(b * z_prime)]
+        log_det_J = torch.sum((1 - self.mask) * s, dim=1)
         
         return x, log_det_J
 
@@ -91,14 +90,13 @@ class MaskedCouplingLayer(nn.Module):
         sum_log_det_J: [torch.Tensor]
             The sum of the log determinants of the Jacobian matrices of the inverse transformations.
         """
-        # Apply inverse affine coupling transformation: z = (x - t) * exp(-s)
-        # where s and t are computed from the masked part of x (unchanged dimensions)
-        s = self.scale_net(x * (1 - self.mask))
-        t = self.translation_net(x * (1 - self.mask))
-        z = (x - t * self.mask) * torch.exp(-s * self.mask)
+        # Formula z = b * z_prime + (1 - b) * (z_prime - t) * exp(-s)
+        s = self.scale_net(self.mask * x)
+        t = self.translation_net(self.mask * x)
+        z = self.mask * x + (1 - self.mask) * (x - t) * torch.exp(-s)
         
-        # Compute log determinant of Jacobian for inverse: -sum of s for masked dimensions
-        log_det_J = -torch.sum(s * self.mask, dim=1)
+        # Compute log determinant of Jacobian for inverse: -sum of s for transformed dimensions
+        log_det_J = -torch.sum((1 - self.mask) * s, dim=1)
         
         return z, log_det_J
 
