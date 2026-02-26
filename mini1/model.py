@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from flow import FlowPrior
-from vae import BernoulliDecoder, GaussianEncoder, VAE, GaussianPrior
+from vae import BernoulliDecoder, GaussianEncoder, VAE, GaussianPrior, MoGPrior
 
 def create_vae_model(prior_type, M, device):
     """
@@ -17,6 +17,8 @@ def create_vae_model(prior_type, M, device):
     """
     if prior_type == 'gaussian':
         prior = GaussianPrior(M)
+    elif prior_type == 'mog':
+        prior = MoGPrior(M, num_components=10)
     elif prior_type == 'flow':
         prior = FlowPrior(M, num_transformations=5, num_hidden=64)
     else:

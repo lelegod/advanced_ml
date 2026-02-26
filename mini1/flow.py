@@ -70,6 +70,7 @@ class MaskedCouplingLayer(nn.Module):
         
         return z, log_det_J
 
+
 class Flow(nn.Module):
     def __init__(self, base, transformations):
         """
@@ -165,6 +166,7 @@ class Flow(nn.Module):
             The negative mean log likelihood for the given data batch.
         """
         return -torch.mean(self.log_prob(x))
+
 
 class FlowPrior(nn.Module):
     def __init__(self, D, num_transformations=5, num_hidden=64):

@@ -34,6 +34,29 @@ class GaussianPrior(nn.Module):
         return td.Independent(td.Normal(loc=self.mean, scale=self.std), 1).sample(sample_shape)
 
 
+class MoGPrior(nn.Module):
+    def __init__(self, M, num_components=10):
+        super(MoGPrior, self).__init__()
+        self.M = M
+        self.num_components = num_components
+        
+        # Learnable parameters for the MoG
+        self.logits = nn.Parameter(torch.zeros(num_components))
+        self.means = nn.Parameter(torch.randn(num_components, M) * 2.0)
+        self.log_vars = nn.Parameter(torch.zeros(num_components, M))
+
+    def _get_dist(self):
+        mix = td.Categorical(logits=self.logits)
+        comp = td.Independent(td.Normal(loc=self.means, scale=torch.exp(0.5 * self.log_vars)), 1)
+        return td.MixtureSameFamily(mix, comp)
+
+    def log_prob(self, z):
+        return self._get_dist().log_prob(z)
+
+    def sample(self, sample_shape):
+        return self._get_dist().sample(sample_shape)
+
+
 class GaussianEncoder(nn.Module):
     def __init__(self, encoder_net):
         """
@@ -183,6 +206,7 @@ def train(model, optimizer, data_loader, epochs, device):
             # Update progress bar
             progress_bar.set_postfix(loss=f"⠀{loss.item():12.4f}", epoch=f"{epoch+1}/{epochs}")
             progress_bar.update()
+
 
 def evaluate(model, data_loader, device):
     model.eval()
