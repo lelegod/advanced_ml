@@ -8,11 +8,10 @@ from model import create_vae_model
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--prior', type=str, default='gaussian', choices=['gaussian', 'mog', 'flow'], help='Prior to use for VAE')
-    parser.add_argument('--model', type=str, default='model_gaussian.pt', help='file to save model to or load model from')
     parser.add_argument('--device', type=str, default='cpu', choices=['cpu', 'cuda', 'mps'], help='torch device')
     parser.add_argument('--batch-size', type=int, default=32, metavar='N', help='batch size for training')
     parser.add_argument('--epochs', type=int, default=10, metavar='N', help='number of epochs to train')
-    parser.add_argument('--latent-dim', type=int, default=2, metavar='N', help='dimension of latent variable')
+    parser.add_argument('--latent-dim', type=int, default=32, metavar='N', help='dimension of latent variable')
 
     args = parser.parse_args()
     print('# Options')
