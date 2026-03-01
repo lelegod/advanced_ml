@@ -27,6 +27,10 @@ if __name__ == "__main__":
     model.eval()
     with torch.no_grad():
         samples = (model.sample(64)).cpu() 
-        sample_path = os.path.join(script_dir, f"model/{args.prior}/{args.prior}_sample.png")
-        os.makedirs(os.path.dirname(sample_path), exist_ok=True)
-        save_image(samples.view(64, 1, 28, 28), sample_path)
+        samples_dir = os.path.join(script_dir, f"model/{args.prior}/samples")
+        os.makedirs(samples_dir, exist_ok=True)
+        
+        reshaped_samples = samples.view(64, 1, 28, 28)
+        for i in range(64):
+            sample_path = os.path.join(samples_dir, f"{args.prior}_sample_{i}.png")
+            save_image(reshaped_samples[i], sample_path)
