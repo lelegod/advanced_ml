@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # Define VAE model
     model = create_vae_model(args.prior, args.latent_dim, device)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(script_dir, f"model/{args.prior}/{args.prior}_vae_model.pt")
+    model_path = os.path.join(script_dir, f"model/{args.prior}/{args.prior}_vae_model_run0.pt")
 
     model.load_state_dict(torch.load(model_path, map_location=torch.device(device), weights_only=True))
     model.eval()
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     plt.title(f'{args.prior.upper()} Prior and Aggregate Posterior (PCA Projected from {args.latent_dim}D)')
     plt.xlabel('Principal Component 1')
     plt.ylabel('Principal Component 2')
-    sample_path = os.path.join(script_dir, f"model/{args.prior}/{args.prior}_sample_plot.png")
+    sample_path = os.path.join(script_dir, f"model/{args.prior}/{args.prior}_run0_sample_plot.png")
     os.makedirs(os.path.dirname(sample_path), exist_ok=True)
     plt.savefig(sample_path)
     plt.close()
