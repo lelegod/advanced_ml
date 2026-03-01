@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument('--prior', type=str, default='gaussian', choices=['gaussian', 'mog', 'flow'], help='Prior to use for VAE')
     parser.add_argument('--device', type=str, default='cpu', choices=['cpu', 'cuda', 'mps'], help='torch device')
     parser.add_argument('--latent-dim', type=int, default=32, metavar='N', help='dimension of latent variable')
-    parser.add_argument('--n-samples', type=int, default=64, metavar='N', help='number of samples to be generated')
+    parser.add_argument('--n-samples', type=int, default=5000, metavar='N', help='number of samples to be generated')
 
     args = parser.parse_args()
     print('# Options')
