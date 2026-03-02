@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
-import time
 import argparse
 import os
 from torchvision.utils import save_image
 from model import create_vae_model
+from time import perf_counter
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -28,9 +28,9 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(model_path, map_location=torch.device(device), weights_only=True))
     model.eval()
     with torch.no_grad():
-        start_time = time.time()
+        start_time = perf_counter()
         samples = (model.sample(args.n_samples)).cpu() 
-        end_time = time.time()
+        end_time = perf_counter()
         print(f"Samples per second: {args.n_samples / (end_time - start_time):.4f}")
         
         samples_dir = os.path.join(script_dir, f"model/{args.prior}/samples")
