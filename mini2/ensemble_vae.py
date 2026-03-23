@@ -154,6 +154,81 @@ class VAE(nn.Module):
         return -self.elbo(x)
 
 
+def curve_energy(interior_pts, z_start, z_end, decoder_net):
+    """
+    Compute the pull-back curve energy.
+
+    E(c) = sum_i || f(z_{i+1}) - f(z_i) ||^2
+    where f = decoder_net (the decoder mean).
+
+    Parameters:
+    interior_pts: [torch.Tensor] shape (num_t-2, latent_dim), requires_grad=True
+    z_start: [torch.Tensor] shape (latent_dim,)
+    z_end:   [torch.Tensor] shape (latent_dim,)
+    decoder_net: [torch.nn.Module] the decoder network (maps z -> image mean)
+
+    Returns:
+    energy: [torch.Tensor] scalar
+    """
+    # (num_t, latent_dim)
+    curve_pts = torch.cat([
+        z_start.unsqueeze(0),
+        interior_pts,
+        z_end.unsqueeze(0),
+    ], dim=0) # (num_t, latent_dim)
+
+    # (num_t, 1, 28, 28)
+    decoded = decoder_net(curve_pts)
+
+    # (num_t, 784)
+    decoded_flat = decoded.reshape(decoded.shape[0], -1)
+
+    # (num_t-1, 784)
+    diffs = decoded_flat[1:] - decoded_flat[:-1]
+    energy = (diffs ** 2).sum()
+    return energy
+
+
+def compute_geodesic(z_start, z_end, decoder_net, num_t=20, lr=1e-2, num_steps=500):
+    """
+    Compute the geodesic between z_start and z_end under the pull-back metric
+    of decoder_net by minimizing the curve energy.
+
+    Parameters:
+    z_start: [torch.Tensor] shape (latent_dim,)
+    z_end:   [torch.Tensor] shape (latent_dim,)
+    decoder_net: [torch.nn.Module]
+    num_t: [int] total number of curve points including endpoints
+    lr: [float] Adam learning rate
+    num_steps: [int] number of gradient steps
+
+    Returns:
+    curve_pts: [torch.Tensor] shape (num_t, latent_dim)
+    """
+    # (num_t-2,)
+    t_vals = torch.linspace(0, 1, num_t)[1:-1]
+    interior_pts = (
+        z_start.unsqueeze(0) * (1 - t_vals.unsqueeze(1)) +
+        z_end.unsqueeze(0) * t_vals.unsqueeze(1)
+    ).detach().clone().requires_grad_(True)
+
+    optimizer = torch.optim.Adam([interior_pts], lr=lr)
+
+    for _ in range(num_steps):
+        optimizer.zero_grad()
+        energy = curve_energy(interior_pts, z_start, z_end, decoder_net)
+        energy.backward()
+        optimizer.step()
+
+    with torch.no_grad():
+        curve_pts = torch.cat([
+            z_start.unsqueeze(0),
+            interior_pts,
+            z_end.unsqueeze(0),
+        ], dim=0)
+    return curve_pts
+
+
 def train(model, optimizer, data_loader, epochs, device):
     """
     Train a VAE model.
@@ -437,5 +512,60 @@ if __name__ == "__main__":
             GaussianDecoder(new_decoder()),
             GaussianEncoder(new_encoder()),
         ).to(device)
-        model.load_state_dict(torch.load(args.experiment_folder + "/model.pt"))
+        model.load_state_dict(
+            torch.load(args.experiment_folder + "/model.pt", map_location=device)
+        )
         model.eval()
+
+        all_z = []
+        all_y = []
+        with torch.no_grad():
+            for x, y in mnist_test_loader:
+                x = x.to(device)
+                # (batch, 2)
+                z_mean = model.encoder(x).mean
+                all_z.append(z_mean.cpu())
+                all_y.append(y.cpu())
+        # (N, 2)
+        all_z = torch.cat(all_z, dim=0)
+        # (N,)
+        all_y = torch.cat(all_y, dim=0)
+
+        num_pairs = args.num_curves
+        torch.manual_seed(42)
+        idx = torch.randperm(len(all_z))[:num_pairs * 2]
+        pairs = idx.reshape(num_pairs, 2)
+
+        fig, ax = plt.subplots(figsize=(8, 8))
+        scatter = ax.scatter(
+            all_z[:, 0].numpy(), all_z[:, 1].numpy(),
+            c=all_y.numpy(), cmap="tab10", s=5, alpha=0.5
+        )
+        plt.colorbar(scatter, ax=ax, label="class")
+
+        decoder_net = model.decoder.decoder_net.cpu()
+        decoder_net.eval()
+
+        print(f"Computing {num_pairs} geodesics...")
+        for i, (a, b) in enumerate(pairs):
+            z_start = all_z[a]
+            z_end = all_z[b]
+            curve = compute_geodesic(
+                z_start, z_end, decoder_net,
+                num_t=args.num_t, lr=1e-2, num_steps=500
+            )
+            ax.plot(
+                curve[:, 0].numpy(), curve[:, 1].numpy(),
+                color="black", linewidth=0.8, alpha=0.7
+            )
+            if (i + 1) % 5 == 0:
+                print(f"  {i + 1}/{num_pairs} done")
+
+        ax.set_title("Latent space with pull-back geodesics (Part A)")
+        ax.set_xlabel("z1")
+        ax.set_ylabel("z2")
+        plt.tight_layout()
+
+        out_path = os.path.join(args.experiment_folder, "geodesics_partA.png")
+        plt.savefig(out_path, dpi=150)
+        print(f"Saved plot to {out_path}")
