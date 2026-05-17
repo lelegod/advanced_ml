@@ -318,15 +318,15 @@ SBGM &$\sim$Ex.&No/Yes&No&Slow\\
 
 \textbf{Identifiability:} $p_\theta$ identifiable $\Leftrightarrow$ $\theta\mapsto p_\theta$ injective. VAEs/NNs fail: reparametrise $\bz$ without changing $p_\theta(\bx)$.
 
-\textbf{Manifold:} $\mathcal{M}=f(\mathcal{Z})$, $f:\mathcal{Z}\!\subseteq\!\R^M\to\R^D$ smooth, $D>M$.\\
-\textbf{Immersed:} $J_f$ full rank $\forall\bz$. (Embedded $\Rightarrow$ immersed, not vice versa.)\\
+\textbf{Manifold:} $\mathcal{M}=f(\mathcal{Z})$, $f:\mathcal{Z}\!\subseteq\!\R^d\to\R^D$ smooth, $D>d$.\\
+\textbf{Immersed:} $J_f$ full rank $\forall\bx$. (Embedded $\Rightarrow$ immersed, not vice versa.)\\
 MLP with full-rank weights + smooth activations $\Rightarrow$ immersed.
 
 \textbf{Pullback Riemannian metric:}
 \[
-  M(\bz) = J_f(\bz)^\top J_f(\bz) \in\R^{M\times M}
+  M(\bx) = J_f(\bx)^\top J_f(\bx) \in\R^{d\times d}
 \]
-Inner product: $\langle\mathbf{u},\mathbf{v}\rangle_\bz=\mathbf{u}^\top M(\bz)\mathbf{v}$.\\
+Inner product: $\langle\mathbf{u},\mathbf{v}\rangle_\bx=\mathbf{u}^\top M(\bx)\mathbf{v}$.\\
 Invariant to reparametrisations $\Rightarrow$ identifiable distances.
 
 \textbf{Curve length:}
@@ -380,7 +380,7 @@ Fisher-Rao metric = Riemannian metric on distribution space; reparametrisation i
 
 \sub{Parameter Manifolds}
 
-$G(\theta)=\E_\bx\!\bigl[J_f(\bx;\theta)^\top J_f(\bx;\theta)\bigr]$\\
+$M(\theta)=\E_\bx\!\bigl[J_f(\bx;\theta)^\top J_f(\bx;\theta)\bigr]$\\
 \textbf{Kernel manifold:} zero-length curves (same function, diff.\ params).\\
 \textbf{Image manifold:} positive-length curves (diff.\ functions).\\
 UQ: project Gaussian param samples onto kernel $\Rightarrow$ interpolates data.

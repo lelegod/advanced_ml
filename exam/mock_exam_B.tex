@@ -1,0 +1,398 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+\geometry{a4paper,top=25mm,bottom=25mm,left=25mm,right=25mm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{Student number:\hspace{4cm}}
+\fancyfoot[R]{\thepage\ of \pageref{LastPage}}
+
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ELBO}{\mathrm{ELBO}}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Technical University of Denmark}\\[4pt]
+{\large Advanced machine learning (02460)}\\[4pt]
+{\large Practice Exam Set B}\\[4pt]
+Exam duration: 2 hours.\quad Aid: None.\\[2pt]
+\textbf{IMPORTANT:} Questions are self-contained; all necessary formulas are provided.\\
+Only information written on pages 2--11 will be evaluated.\\
+Write your student number on all pages at the bottom-left.
+\end{center}
+
+\bigskip
+\textbf{Contents}
+\begin{itemize}[noitemsep]
+  \item[\textbf{I}] \textbf{Generative models} \hfill 2
+  \begin{itemize}[noitemsep]
+    \item Exercise A: Variational autoencoder (VAE) with MoG prior \hfill 2
+    \item Exercise B: Normalizing flows (affine coupling) \hfill 3
+    \item Exercise C: Denoising Diffusion Probabilistic Models \hfill 4
+  \end{itemize}
+  \item[\textbf{II}] \textbf{Representation learning} \hfill 5
+  \begin{itemize}[noitemsep]
+    \item Exercise D: Pull-back metrics \hfill 5
+    \item Exercise E: Curve energy \hfill 6
+    \item Exercise F: Bregman divergence \hfill 7
+  \end{itemize}
+  \item[\textbf{III}] \textbf{Graph models} \hfill 8
+  \begin{itemize}[noitemsep]
+    \item Exercise G: Graph metrics \hfill 8
+    \item Exercise H: Graph Fourier transform and convolution \hfill 9
+    \item Exercise I: Weisfeiler-Lehman test \hfill 10
+    \item Exercise J: Message passing \hfill 11
+  \end{itemize}
+\end{itemize}
+
+\newpage
+\section*{Part I \quad Generative models}
+
+\subsection*{Exercise A --- Variational autoencoder (VAE) with MoG prior}
+
+Consider a deep latent variable model with $z\in\mathbb{R}$ and $\mathbf{x}\in\mathbb{R}^2$.
+Let $z$ follow a \emph{Mixture of Gaussians} (MoG) prior
+\[
+  p(z) = \tfrac{1}{2}\,\N(z\mid 0, 1) + \tfrac{1}{2}\,\N(z\mid 4, 1),
+\]
+and the likelihood be
+\[
+  p(\mathbf{x}\mid z) = \N\!\bigl(\mathbf{x}\mid [z, -z]^\top,\, \mathbf{I}_2\bigr).
+\]
+Consider the variational posterior
+\[
+  q(z\mid\mathbf{x}) = \N\!\bigl(z\mid x_1 - \tfrac{x_2}{2},\; 1\bigr).
+\]
+Recall that the one-sample Monte Carlo estimate of the ELBO is
+\[
+  \ELBO(\mathbf{x}) \approx \ln p(\mathbf{x}\mid z') + \ln p(z') - \ln q(z'\mid\mathbf{x}), \tag{1}
+\]
+that the univariate Gaussian density is
+$\N(z\mid\mu,\sigma^2) = \tfrac{1}{\sqrt{2\pi\sigma^2}}\exp\!\bigl(-\tfrac{(z-\mu)^2}{2\sigma^2}\bigr)$,
+and the bivariate Gaussian density with identity covariance is
+$\N(\mathbf{x}\mid\boldsymbol{\mu},\mathbf{I}_2) = \tfrac{1}{2\pi}\exp\!\bigl(-\tfrac{1}{2}\|\mathbf{x}-\boldsymbol{\mu}\|^2\bigr)$.
+
+\textbf{Question A.1:} With sampled value $z'=2$ and $\mathbf{x}'=[2,-2]^\top$, what is the
+one-sample ELBO estimate?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $-\ln(2\pi) - \tfrac{3}{2}$
+  \item[\textbf{B}] $\square$ \quad $-\ln(2\pi) - \tfrac{5}{2}$
+  \item[\textbf{C}] $\square$ \quad $-2\ln(2\pi) - \tfrac{3}{2}$
+  \item[\textbf{D}] $\square$ \quad $-\ln(2\pi) - \tfrac{1}{2}$
+\end{itemize}
+
+Give a brief argument for your answer.
+
+\vspace{6cm}
+
+\newpage
+\subsection*{Exercise B --- Normalizing flows (affine coupling)}
+
+Consider the transformation $T:\mathbb{R}^2\to\mathbb{R}^2$ defined by
+\[
+  T(\mathbf{u}) = \bigl[u_1,\;\; e^{s(u_1)} u_2 + t(u_1)\bigr]^\top, \tag{2}
+\]
+where $s, t:\mathbb{R}\to\mathbb{R}$ are continuously differentiable ($C^1$) functions.
+The base distribution is $p_{\mathbf{u}}(\mathbf{u})=\N(\mathbf{u}\mid\mathbf{0},\mathbf{I}_2)$.
+
+\textbf{Question B.1:} Which of the following statements correctly describes $T$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $T$ is invertible only if $s$ is a constant function.
+  \item[\textbf{B}] $\square$ \quad $T$ is invertible only if $e^{s(u_1)}\neq 0$ for all $u_1$.
+  \item[\textbf{C}] $\square$ \quad $T$ is invertible for \emph{any} $C^1$ functions $s, t$.
+  \item[\textbf{D}] $\square$ \quad $T$ is not invertible in general.
+\end{itemize}
+
+Give a brief justification (derive $T^{-1}$ or show it fails).
+
+\vspace{4cm}
+
+\textbf{Question B.2:} What is $\det J_T(\mathbf{u})$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $\det J_T = 1$
+  \item[\textbf{B}] $\square$ \quad $\det J_T = e^{s(u_1)}$
+  \item[\textbf{C}] $\square$ \quad $\det J_T = e^{s(u_1)} + t(u_1)$
+  \item[\textbf{D}] $\square$ \quad $\det J_T = e^{s(u_1) + t(u_1)}$
+\end{itemize}
+
+Give a brief justification.
+
+\vspace{4cm}
+
+\textbf{Question B.3:} Let $s(u_1)=0$ and $t(u_1)=u_1^2$.  What is $p_{\mathbf{x}}([1,2]^\top)$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $\dfrac{e^{-1}}{2\pi}$
+  \item[\textbf{B}] $\square$ \quad $\dfrac{e^{-1/2}}{2\pi}$
+  \item[\textbf{C}] $\square$ \quad $\dfrac{e^{-2}}{2\pi}$
+  \item[\textbf{D}] $\square$ \quad $\dfrac{1}{2\pi}$
+\end{itemize}
+
+Show the main steps of your derivation.
+
+\vspace{3cm}
+
+\newpage
+\subsection*{Exercise C --- Denoising Diffusion Probabilistic Models}
+
+Consider a DDPM with $T=5$ steps where $\mathbf{x}_0\in\mathbb{R}^D$ is the data.  Recall the
+forward process
+\[
+  q(\mathbf{x}_{1:T}\mid\mathbf{x}_0) = \prod_{t=1}^T q(\mathbf{x}_t\mid\mathbf{x}_{t-1}),
+  \qquad
+  q(\mathbf{x}_t\mid\mathbf{x}_{t-1}) = \N(\mathbf{x}_t\mid\sqrt{1-\beta_t}\,\mathbf{x}_{t-1},\,\beta_t\mathbf{I}). \tag{3}
+\]
+
+\textbf{Question C.1:} Which one of the following equalities is true for \emph{any} variance
+schedule $\{\beta_t\}$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $q(\mathbf{x}_3\mid\mathbf{x}_4, \mathbf{x}_1, \mathbf{x}_5) = q(\mathbf{x}_3\mid\mathbf{x}_1)$
+  \item[\textbf{B}] $\square$ \quad $q(\mathbf{x}_3\mid\mathbf{x}_4, \mathbf{x}_1, \mathbf{x}_5) = q(\mathbf{x}_3\mid\mathbf{x}_5)$
+  \item[\textbf{C}] $\square$ \quad $q(\mathbf{x}_3\mid\mathbf{x}_4, \mathbf{x}_1, \mathbf{x}_5) = q(\mathbf{x}_3\mid\mathbf{x}_4, \mathbf{x}_1)$
+  \item[\textbf{D}] $\square$ \quad $q(\mathbf{x}_3\mid\mathbf{x}_4, \mathbf{x}_1, \mathbf{x}_5) = q(\mathbf{x}_3\mid\mathbf{x}_4, \mathbf{x}_5)$
+\end{itemize}
+
+Give a brief justification using the Markov property of the forward process.
+
+\vspace{5cm}
+
+\newpage
+\section*{Part II \quad Representation learning}
+
+\subsection*{Exercise D --- Pull-back metrics}
+
+Consider the generative model $f:\mathbb{R}^d\to\mathbb{R}^D$ ($D\geq d$)
+\[
+  f(\mathbf{x}) = W_2\,\tanh(W_1\mathbf{x}+\mathbf{b}_1)+\mathbf{b}_2, \tag{4}
+\]
+where $W_1\in\mathbb{R}^{D\times d}$, $W_2\in\mathbb{R}^{D\times D}$ are full-rank matrices and
+$\tanh$ is applied element-wise.  Recall that $\frac{\mathrm{d}}{\mathrm{d}x}\tanh(x)=1-\tanh^2(x)$.
+Define
+\[
+  \Lambda = \mathrm{diag}\!\bigl(\mathbf{1} - \tanh^2(W_1\mathbf{x}+\mathbf{b}_1)\bigr)
+  \in\mathbb{R}^{D\times D}. \tag{5}
+\]
+
+\textbf{Question D.1:} The pull-back metric $G_{\mathbf{x}}=J_{\mathbf{x}}^\top J_{\mathbf{x}}$
+(where $J_{\mathbf{x}}$ is the Jacobian of $f$) is:
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $G_{\mathbf{x}} = W_1^\top\Lambda\, W_2^\top W_2\,\Lambda\, W_1$
+  \item[\textbf{B}] $\square$ \quad $G_{\mathbf{x}} = W_2^\top\Lambda\, W_1^\top W_1\,\Lambda\, W_2$
+  \item[\textbf{C}] $\square$ \quad $G_{\mathbf{x}} = W_1^\top\Lambda^2 W_2^\top W_2\, W_1$
+  \item[\textbf{D}] $\square$ \quad $G_{\mathbf{x}} = W_1^\top W_2^\top W_2\,\Lambda^2 W_1$
+\end{itemize}
+
+Give a brief argument for your answer.
+
+\vspace{4cm}
+
+\newpage
+\subsection*{Exercise E --- Curve energy}
+
+Consider the generative model $\mathbf{y}=f(\mathbf{x})$, where
+\[
+  f(\mathbf{x}) = \bigl[2x_1^2,\;\; x_1^2+3x_2^2,\;\; 2x_1+x_2^2\bigr]^\top. \tag{6}
+\]
+Consider also the two latent curves
+$\mathbf{c}_1(t) = t[1,0]^\top$ and $\mathbf{c}_2(t) = t[0,1]^\top$ for $t\in[0,1]$.
+
+\textbf{Question E.1:} Derive the pull-back metric $G_{\mathbf{x}}=J_{\mathbf{x}}^\top J_{\mathbf{x}}$.
+
+\vspace{5cm}
+
+\textbf{Question E.2:} Evaluate the energies $E(\mathbf{c}_1)$ and $E(\mathbf{c}_2)$ using
+\[
+  E(\mathbf{c}) = \int_0^1 \dot{\mathbf{c}}(t)^\top G_{\mathbf{c}(t)}\,\dot{\mathbf{c}}(t)\;\mathrm{d}t. \tag{7}
+\]
+
+\[
+  E(\mathbf{c}_1) = \hspace{6cm} E(\mathbf{c}_2) =
+\]
+
+Sketch your derivations below.
+
+\vspace{5cm}
+
+\newpage
+\subsection*{Exercise F --- Bregman divergence}
+
+In information geometry, the Bregman divergence for comparing distributions $p$ and $q$ is
+\[
+  D_F(p, q) = F(p) - F(q) - \langle \nabla F(q),\, p - q\rangle, \tag{8}
+\]
+where $\nabla F(q) = [\partial F/\partial q_1, \ldots, \partial F/\partial q_D]^\top$.
+
+Consider two probability vectors $p=[p_1,\ldots,p_D]^\top$ and $q=[q_1,\ldots,q_D]^\top$ with
+$p_i>0$, $q_i>0$, and $\sum_i p_i=\sum_i q_i=1$.
+
+\textbf{Question F.1:} Let $F(p)=\sum_i p_i\ln p_i$ (negative entropy).
+Show that $D_F(p,q)=\KL(p\|q)$, where $\KL(p\|q)=\sum_i p_i\ln(p_i/q_i)$.
+
+\emph{Hint:} First compute $\nabla F(q)$.
+
+\vspace{8cm}
+
+\newpage
+\section*{Part III \quad Graph models}
+
+\subsection*{Exercise G --- Graph metrics}
+
+Consider a graph with 5 nodes $a, b, c, d, e$ and edges
+$\{a\text{--}b,\; a\text{--}c,\; a\text{--}d,\; b\text{--}c,\; d\text{--}e\}$.
+
+The \emph{clustering coefficient} of a node $u$ is defined as
+\[
+  c_u = \frac{|\{(v_1,v_2)\in E : v_1,v_2\in\mathcal{N}(u)\}|}{\binom{d_u}{2}}, \tag{9}
+\]
+where $d_u$ is the degree of $u$.
+
+\textbf{Question G.1:} What are the clustering coefficients of node $a$ and node $b$?
+
+\[
+  c_a = \hspace{5cm} c_b =
+\]
+
+Show the main steps.
+
+\vspace{3cm}
+
+The \emph{eigenvector centrality} satisfies $e_u = \tfrac{1}{\lambda}\sum_{v\in\mathcal{N}(u)}e_v$,
+where $\lambda$ is the largest eigenvalue of the adjacency matrix.  For the above graph, the
+eigenvector centralities of nodes $b, d$ are $e_b=e_d=0.500$ and of nodes $c, e$ are
+$e_c=e_e=0.354$.
+
+\textbf{Question G.2:} What is the eigenvector centrality $e_a$?
+
+\[
+  e_a =
+\]
+
+Show the main steps.
+
+\vspace{4cm}
+
+\newpage
+\subsection*{Exercise H --- Graph Fourier transform and convolution}
+
+Consider a \emph{path graph} with three nodes: $a$--$b$--$c$.  The adjacency matrix is
+\[
+  A = \begin{bmatrix}0&1&0\\1&0&1\\0&1&0\end{bmatrix}.
+\]
+Its eigendecomposition is $A=U\Lambda U^\top$ with
+\[
+  \Lambda = \mathrm{diag}(-\sqrt{2},\; 0,\; \sqrt{2}),\qquad
+  U = \frac{1}{2}\begin{bmatrix}1&\sqrt{2}&1\\-\sqrt{2}&0&\sqrt{2}\\1&-\sqrt{2}&1\end{bmatrix}.
+\]
+A graph convolution with filter $h[k]$ can be written as
+\[
+  \mathbf{y} = \sum_{k=0}^N h[k]\,A^k\,\mathbf{x} = U\!\left(\sum_{k=0}^N h[k]\,\Lambda^k\right)\!U^\top\mathbf{x}. \tag{10}
+\]
+
+\textbf{Question H.1:} Use the filter $h[k]=1$ for $0\leq k\leq 2$ and $h[k]=0$ otherwise.
+Given vertex-domain signal $\mathbf{x}=[1,0,1]^\top$, compute the filtered signal $\mathbf{y}$.
+
+\[
+  \mathbf{y} = [\phantom{00},\phantom{00},\phantom{00}]^\top
+\]
+
+Show the main steps.
+
+\vspace{4cm}
+
+\textbf{Question H.2:} For the same filter, what is the Fourier-domain filter matrix
+$M=\sum_{k=0}^N h[k]\Lambda^k$ (a $3\times 3$ diagonal matrix)?
+
+\[
+  M = \mathrm{diag}(\phantom{00},\;\phantom{00},\;\phantom{00})
+\]
+
+Show the main steps.
+
+\vspace{3cm}
+
+\newpage
+\subsection*{Exercise I --- Weisfeiler-Lehman test}
+
+Consider a graph with 5 nodes: a \emph{4-cycle} $a$--$b$--$c$--$d$--$a$ with an additional
+edge $b$--$d$ (making a cycle with a chord).  Run the WL algorithm with:
+\begin{enumerate}[noitemsep]
+  \item Initial labels $\ell^{(0)}_v = d_v$ (degree).
+  \item Update: $\ell^{(i)}_v=\mathrm{hash}(\{\!\{\ell^{(i-1)}_u:u\in\mathcal{N}(v)\}\!\})$.
+\end{enumerate}
+
+\textbf{Question I.1:} Which of the following are true?  Select all that apply.
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $\ell^{(0)}_a = \ell^{(0)}_c = 2$
+  \item[\textbf{B}] $\square$ \quad $\ell^{(0)}_b = \ell^{(0)}_d = 3$
+  \item[\textbf{C}] $\square$ \quad $\ell^{(1)}_a = \ell^{(1)}_c$
+  \item[\textbf{D}] $\square$ \quad $\ell^{(1)}_b = \ell^{(1)}_d$
+  \item[\textbf{E}] $\square$ \quad $\ell^{(1)}_a = \ell^{(1)}_b$
+\end{itemize}
+
+\textbf{Question I.2:} After how many rounds does the WL algorithm halt?
+
+\[
+  \text{Number of rounds} =
+\]
+
+Give a brief argument.
+
+\vspace{3cm}
+
+\subsection*{Exercise J --- Message passing}
+
+Consider a 4-cycle $a$--$b$--$c$--$d$--$a$.  We use the GNN
+\[
+  h_u^{(k)} = w_0 + w_1 h_u^{(k-1)} + w_2\!\sum_{v\in\mathcal{N}(u)} h_v^{(k-1)}, \tag{11}
+\]
+with $w_0=0$, $w_1=1$, $w_2=1$, and initial features $h_a^{(0)}=1$, $h_b^{(0)}=2$,
+$h_c^{(0)}=1$, $h_d^{(0)}=2$.
+
+\textbf{Question J.1:} What are the node features after one message-passing round?
+
+\[
+  h_a^{(1)} = \quad h_b^{(1)} = \quad h_c^{(1)} = \quad h_d^{(1)} =
+\]
+
+Show the main steps.
+
+\vspace{3cm}
+
+\textbf{Question J.2:} Write the single-layer update as $\mathbf{h}^{(k)} = M\,\mathbf{h}^{(k-1)}$
+(with $w_0=0$).  Fill in all non-zero entries of $M$.
+
+\[
+  M = \begin{bmatrix}
+    \phantom{0} & \phantom{0} & \phantom{0} & \phantom{0} \\[6pt]
+    & & & \\[6pt]
+    & & & \\[6pt]
+    & & &
+  \end{bmatrix}
+\]
+
+\textbf{Question J.3:} Choose parameters $w_0, w_1, w_2$ such that the GNN implements the
+identity, i.e.\ $h_u^{(1)}=h_u^{(0)}$ for all $u$.
+
+\[
+  w_0 = \qquad w_1 = \qquad w_2 =
+\]
+
+\end{document}

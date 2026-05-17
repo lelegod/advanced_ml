@@ -1,0 +1,394 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+\geometry{a4paper,top=25mm,bottom=25mm,left=25mm,right=25mm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{Student number:\hspace{4cm}}
+\fancyfoot[R]{\thepage\ of \pageref{LastPage}}
+
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ELBO}{\mathrm{ELBO}}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Technical University of Denmark}\\[4pt]
+{\large Advanced machine learning (02460)}\\[4pt]
+{\large Practice Exam Set C}\\[4pt]
+Exam duration: 2 hours.\quad Aid: None.\\[2pt]
+\textbf{IMPORTANT:} Questions are self-contained; all necessary formulas are provided.\\
+Only information written on pages 2--11 will be evaluated.\\
+Write your student number on all pages at the bottom-left.
+\end{center}
+
+\bigskip
+\textbf{Contents}
+\begin{itemize}[noitemsep]
+  \item[\textbf{I}] \textbf{Generative models} \hfill 2
+  \begin{itemize}[noitemsep]
+    \item Exercise A: Probabilistic PCA \hfill 2
+    \item Exercise B: Normalizing flows \hfill 3
+    \item Exercise C: Denoising Diffusion Probabilistic Models \hfill 4
+  \end{itemize}
+  \item[\textbf{II}] \textbf{Representation learning} \hfill 5
+  \begin{itemize}[noitemsep]
+    \item Exercise D: Pull-back metrics \hfill 5
+    \item Exercise E: Geodesic approximation \hfill 6
+    \item Exercise F: Curve energy \hfill 7
+    \item Exercise G: Neural network reparametrization \hfill 8
+  \end{itemize}
+  \item[\textbf{III}] \textbf{Graph models} \hfill 9
+  \begin{itemize}[noitemsep]
+    \item Exercise H: Shallow embeddings \hfill 9
+    \item Exercise I: Graph Laplacians and random walks \hfill 10
+    \item Exercise J: Graph convolution \hfill 11
+  \end{itemize}
+\end{itemize}
+
+\newpage
+\section*{Part I \quad Generative models}
+
+\subsection*{Exercise A --- Probabilistic PCA}
+
+Consider a probabilistic PCA model with latent variable $z\in\mathbb{R}$ and observed variable
+$\mathbf{x}\in\mathbb{R}^2$.  Let $z$ follow a standard Gaussian prior $p(z)=\N(z\mid 0,1)$, and
+the likelihood be
+\[
+  p(\mathbf{x}\mid z) = \N\!\bigl(\mathbf{x}\mid [2,1]^\top z + [0,1]^\top,\; \mathbf{I}_2\bigr).
+\]
+Recall that if $z\sim\N(0,1)$ and $\mathbf{x}=\mathbf{w}z+\mathbf{b}+\boldsymbol{\varepsilon}$ with
+$\boldsymbol{\varepsilon}\sim\N(\mathbf{0},\mathbf{I})$, then
+\[
+  p(\mathbf{x}) = \N\!\bigl(\mathbf{x}\mid \mathbf{b},\;\mathbf{w}\mathbf{w}^\top+\mathbf{I}\bigr). \tag{1}
+\]
+
+\textbf{Question A.1:} What is the marginal distribution $p(\mathbf{x})$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $p(\mathbf{x}) = \N\!\bigl(\mathbf{x}\mid [0,1]^\top,\; \begin{bmatrix}5&2\\2&2\end{bmatrix}\bigr)$
+  \item[\textbf{B}] $\square$ \quad $p(\mathbf{x}) = \N\!\bigl(\mathbf{x}\mid [0,1]^\top,\; \begin{bmatrix}5&2\\2&3\end{bmatrix}\bigr)$
+  \item[\textbf{C}] $\square$ \quad $p(\mathbf{x}) = \N\!\bigl(\mathbf{x}\mid [0,0]^\top,\; \begin{bmatrix}5&2\\2&2\end{bmatrix}\bigr)$
+  \item[\textbf{D}] $\square$ \quad $p(\mathbf{x}) = \N\!\bigl(\mathbf{x}\mid [0,0]^\top,\; \begin{bmatrix}5&2\\2&3\end{bmatrix}\bigr)$
+\end{itemize}
+
+Give a brief argument for your answer.
+
+\vspace{5cm}
+
+\newpage
+\subsection*{Exercise B --- Normalizing flows}
+
+Consider a normalizing flow with $\mathbf{u},\mathbf{x}\in\mathbb{R}^2$, where
+$p_{\mathbf{u}}(\mathbf{u})=\N(\mathbf{u}\mid\mathbf{0},\mathbf{I}_2)$ and the transformation
+$T:\mathbb{R}^2\to\mathbb{R}^2$ is
+\[
+  T(\mathbf{u}) = \begin{bmatrix}3&0\\0&2\end{bmatrix}\mathbf{u} + [1,-1]^\top. \tag{2}
+\]
+The density of $\mathbf{x}=T(\mathbf{u})$ is
+\[
+  p_{\mathbf{x}}(\mathbf{x}) = p_{\mathbf{u}}(T^{-1}(\mathbf{x}))\cdot|\det J_{T^{-1}}(\mathbf{x})|. \tag{3}
+\]
+
+\textbf{Question B.1:} What is $p_{\mathbf{x}}([1,-1]^\top)$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad $\dfrac{1}{6\pi}$
+  \item[\textbf{B}] $\square$ \quad $\dfrac{1}{12\pi}$
+  \item[\textbf{C}] $\square$ \quad $\dfrac{1}{18\pi}$
+  \item[\textbf{D}] $\square$ \quad $\dfrac{1}{36\pi}$
+\end{itemize}
+
+Give a brief argument for your answer.
+
+\vspace{6cm}
+
+\newpage
+\subsection*{Exercise C --- Denoising Diffusion Probabilistic Models}
+
+Consider a DDPM with $T=5$ steps.  The variance schedule is
+\[
+  \beta_1=\tfrac{1}{4},\quad\beta_2=\tfrac{1}{3},\quad\beta_3=\tfrac{1}{2},\quad
+  \beta_4=\tfrac{1}{4},\quad\beta_5=\tfrac{1}{4}.
+\]
+Recall the forward process in eq.~(3), the marginal distribution
+\[
+  q(\mathbf{x}_t\mid\mathbf{x}_0) = \N(\mathbf{x}_t\mid\sqrt{\bar\alpha_t}\,\mathbf{x}_0,\,(1-\bar\alpha_t)\mathbf{I}),
+  \quad \bar\alpha_t=\prod_{\tau=1}^t(1-\beta_\tau), \tag{4}
+\]
+and the \emph{forward posterior}
+\[
+  q(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{x}_0) = \N\!\bigl(\mathbf{x}_{t-1}\mid\tilde\mu_t,\;\tilde\beta_t\mathbf{I}\bigr), \tag{5}
+\]
+where
+\[
+  \tilde\mu_t = \frac{\sqrt{\bar\alpha_{t-1}}\,\beta_t}{1-\bar\alpha_t}\,\mathbf{x}_0
+              + \frac{\sqrt{1-\beta_t}\,(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}\,\mathbf{x}_t,
+  \qquad
+  \tilde\beta_t = \frac{\beta_t(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}. \tag{6}
+\]
+
+\textbf{Question C.1:} Assuming $\mathbf{x}_0=[0,0]^\top$ and $\mathbf{x}_2=[3,0]^\top$,
+what is $q(\mathbf{x}_1\mid\mathbf{x}_2,\mathbf{x}_0)$?
+
+First compute $\bar\alpha_1$ and $\bar\alpha_2$.  Then use equations (5) and (6).
+
+\vspace{2cm}
+
+\[
+  \bar\alpha_1 = \hspace{4cm} \bar\alpha_2 =
+\]
+
+\vspace{2cm}
+
+\[
+  q(\mathbf{x}_1\mid\mathbf{x}_2=[3,0]^\top,\;\mathbf{x}_0=[0,0]^\top) =
+\]
+
+Sketch your derivations below.
+
+\vspace{5cm}
+
+\newpage
+\section*{Part II \quad Representation learning}
+
+\subsection*{Exercise D --- Pull-back metrics}
+
+Consider $f:\mathbb{R}^2\to\mathbb{R}^3$ defined by
+\[
+  f(\mathbf{x}) = \bigl[x_1^2+x_2,\;\; x_1+x_2^2,\;\; x_1 x_2\bigr]^\top. \tag{7}
+\]
+
+\textbf{Question D.1:} Compute the Jacobian $J_{\mathbf{x}}$ of $f$ at $\mathbf{x}$, and then
+derive the pull-back metric $G_{\mathbf{x}} = J_{\mathbf{x}}^\top J_{\mathbf{x}}\in\mathbb{R}^{2\times 2}$.
+
+\vspace{7cm}
+
+\textbf{Question D.2:} Evaluate $G_{\mathbf{x}}$ at $\mathbf{x}=[1,0]^\top$.
+
+\[
+  G_{[1,0]^\top} =
+  \begin{bmatrix} & \\ & \end{bmatrix}
+\]
+
+\newpage
+\subsection*{Exercise E --- Geodesic approximation}
+
+Consider a generative model $\mathbf{y}=f(\mathbf{x})$, where $\mathbf{x}\in\mathbb{R}^d$ and
+$\mathbf{y}\in\mathbb{R}^D$ with $d<D$, and $f:\mathbb{R}^d\to\mathbb{R}^D$ is smooth.  We wish to
+find the \emph{geodesic} (shortest path on the manifold) between $\mathbf{c}_0$ and
+$\mathbf{c}_{N+1}$ by minimising over intermediate nodes $\mathbf{c}_{1:N}$:
+\[
+  \mathbf{c}^*_{1:N} = \operatornamewithlimits{argmin}_{\mathbf{c}_{1:N}}
+    \sum_{n=1}^{N+1} \|f(\mathbf{c}_n)-f(\mathbf{c}_{n-1})\|. \tag{8}
+\]
+
+\textbf{Question E.1:} Is the piecewise-linear latent path with nodes
+$\{\mathbf{c}_0,\ldots,\mathbf{c}_{N+1}\}$ a discrete approximation of the shortest
+path in the \emph{latent space} $\mathbb{R}^d$, or the shortest path on the
+\emph{manifold} $f(\mathbb{R}^d)\subset\mathbb{R}^D$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad It approximates the shortest path in the latent space $\mathbb{R}^d$.
+  \item[\textbf{B}] $\square$ \quad It approximates the shortest path on the manifold $f(\mathbb{R}^d)$.
+\end{itemize}
+
+Explain your reasoning.
+
+\vspace{3cm}
+
+\textbf{Question E.2:} A student proposes to instead minimise
+$\sum_{n=1}^{N+1}\|{\mathbf{c}_n-\mathbf{c}_{n-1}}\|$ (straight lines in latent space).
+Would this produce the same result as eq.~(8) in general?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad Yes, they are always equivalent.
+  \item[\textbf{B}] $\square$ \quad No, they differ in general.
+\end{itemize}
+
+Give a brief argument.
+
+\vspace{3cm}
+
+\newpage
+\subsection*{Exercise F --- Curve energy}
+
+Consider the generative model $\mathbf{y}=f(\mathbf{x})$, where
+\[
+  f(\mathbf{x}) = \bigl[x_1,\;\; x_1^2 + x_2^2,\;\; x_2\bigr]^\top. \tag{9}
+\]
+Consider the two latent curves $\mathbf{c}_1(t)=t[1,0]^\top$ and $\mathbf{c}_2(t)=t[0,1]^\top$
+for $t\in[0,1]$.
+
+\textbf{Question F.1:} Derive the pull-back metric $G_{\mathbf{x}}=J_{\mathbf{x}}^\top J_{\mathbf{x}}$.
+
+\vspace{5cm}
+
+\textbf{Question F.2:} Evaluate $E(\mathbf{c}_1)$ and $E(\mathbf{c}_2)$ using
+$E(\mathbf{c})=\int_0^1\dot{\mathbf{c}}^\top G_{\mathbf{c}(t)}\dot{\mathbf{c}}\;\mathrm{d}t$.
+
+\[
+  E(\mathbf{c}_1) = \hspace{6cm} E(\mathbf{c}_2) =
+\]
+
+Sketch your derivations below.
+
+\vspace{4cm}
+
+\newpage
+\subsection*{Exercise G --- Neural network reparametrization}
+
+Consider the neural network $f:\mathbb{R}\to\mathbb{R}$
+\[
+  f(x\mid w_1, w_2) = w_1\,\sigma(w_2\, x), \tag{10}
+\]
+where $\sigma(x)=\max(0,x)$ is the ReLU activation function.
+
+\textbf{Question G.1:} Let $w_3 = \alpha w_1$ for some $\alpha>0$.  Derive a value for $w_4$ such
+that
+\[
+  f(x\mid w_1, w_2) = f(x\mid \alpha w_1, w_4) \quad \text{for all } x. \tag{11}
+\]
+
+\[
+  w_4 =
+\]
+
+Sketch your derivations below.
+
+\vspace{4cm}
+
+\textbf{Question G.2:} Discuss the implication of your answer for the statistical identifiability
+of the parameter vector $(w_1, w_2)$: can we uniquely determine $(w_1,w_2)$ from observations
+$\{(x_i, f(x_i))\}$?
+
+\vspace{4cm}
+
+\textbf{Question G.3:} Would the same issue arise if $\sigma$ were a \emph{bijective} activation
+function (e.g., $\sigma(x)=x$)?  Give a brief argument.
+
+\vspace{3cm}
+
+\newpage
+\section*{Part III \quad Graph models}
+
+\subsection*{Exercise H --- Shallow embeddings}
+
+We use the \emph{sigmoid decoder}
+$P(A_{uv}=1) = \sigma(\mathbf{z}_u^\top\mathbf{z}_v + b)$ where $\sigma(x)=1/(1+e^{-x})$, in
+a 2-dimensional embedding space with $\mathbf{z}_v=[x,y]^\top$.
+
+\textbf{Question H.1:} Let $\mathbf{z}_u=[1,0]^\top$ and $b=0$.  Where could node $v$ be
+embedded so that $P(A_{uv}=1)=0.5$?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad On the line $x=0$ (the $y$-axis)
+  \item[\textbf{B}] $\square$ \quad On the line $x=1$
+  \item[\textbf{C}] $\square$ \quad On a circle of radius 1 centred at the origin
+  \item[\textbf{D}] $\square$ \quad On the line $y=0$
+  \item[\textbf{E}] $\square$ \quad None of the above
+\end{itemize}
+
+Show the main steps of your derivation.
+
+\vspace{4cm}
+
+\textbf{Question H.2:} Two nodes $u$ and $v$ are embedded as $\mathbf{z}_u=[2,0]^\top$ and
+$\mathbf{z}_v=[0,2]^\top$.  With $b=0$, which node pair has higher probability of an edge
+according to the sigmoid decoder?
+
+\begin{itemize}[noitemsep,label={}]
+  \item[\textbf{A}] $\square$ \quad Node pair $(u, u)$, i.e.\ a self-loop on $u$
+  \item[\textbf{B}] $\square$ \quad Node pair $(u, v)$
+  \item[\textbf{C}] $\square$ \quad Both pairs have equal probability
+  \item[\textbf{D}] $\square$ \quad Cannot be determined without knowing $b$
+\end{itemize}
+
+Give a brief argument.
+
+\vspace{3cm}
+
+\newpage
+\subsection*{Exercise I --- Graph Laplacians and random walks}
+
+Consider a graph whose random-walk Laplacian $L_{\mathrm{rw}}=I-D^{-1}A$ is
+\[
+  L_{\mathrm{rw}} =
+  \begin{bmatrix}
+    1 & -\tfrac{1}{3} & -\tfrac{1}{3} & -\tfrac{1}{3} \\[4pt]
+    -1 & 1 & 0 & 0 \\[4pt]
+    -1 & 0 & 1 & 0 \\[4pt]
+    -1 & 0 & 0 & 1
+  \end{bmatrix},
+\]
+with nodes labelled $a, b, c, d$ in row order.
+
+\textbf{Question I.1:} Sketch the graph.
+
+\vspace{3cm}
+
+\textbf{Question I.2:} A random walk starts at node $b$.  What is the probability $p$ of being
+at node $a$ after exactly 2 steps?
+
+\[
+  p =
+\]
+
+Give a brief argument.
+
+\vspace{3cm}
+
+\textbf{Question I.3:} The stationary distribution $\boldsymbol{\pi}$ of the random walk
+satisfies $D^{-1}A\,\boldsymbol{\pi}=\boldsymbol{\pi}$ (equivalently, $L_{\mathrm{rw}}\boldsymbol{\pi}=\mathbf{0}$).
+Without full computation, write down the stationary distribution $\boldsymbol{\pi}$ up to
+normalisation.  Recall that for an undirected graph, $\pi_v\propto d_v$.
+
+\[
+  \boldsymbol{\pi} \propto
+\]
+
+\vspace{2cm}
+
+\newpage
+\subsection*{Exercise J --- Graph convolution}
+
+Consider the same 4-node star graph from Exercise I (centre $a$, leaves $b, c, d$).
+Its adjacency matrix and eigendecomposition are:
+\[
+  A = \begin{bmatrix}0&1&1&1\\1&0&0&0\\1&0&0&0\\1&0&0&0\end{bmatrix},
+  \qquad
+  \lambda_1=-\sqrt{3},\;\lambda_2=\lambda_3=0,\;\lambda_4=\sqrt{3}.
+\]
+A graph convolution is $\mathbf{y}=\sum_{k=0}^N h[k]\,A^k\,\mathbf{x}$.
+
+\textbf{Question J.1:} Using the filter $h[0]=1, h[1]=-1$ (and $h[k]=0$ otherwise) and the
+signal $\mathbf{x}=[0,1,1,1]^\top$, compute the filtered signal $\mathbf{y}$.
+
+\[
+  \mathbf{y} = [\phantom{00},\phantom{00},\phantom{00},\phantom{00}]^\top
+\]
+
+Show the main steps.  (\emph{Hint:} Compute $A\mathbf{x}$ directly from the adjacency structure.)
+
+\vspace{5cm}
+
+\textbf{Question J.2:} The Fourier-domain filter matrix for filter $h[k]$ is
+$M=\sum_{k=0}^N h[k]\Lambda^k$.  For $h[0]=1, h[1]=-1$, what is the first diagonal entry
+$M_{11}$ (corresponding to $\lambda_1=-\sqrt{3}$)?
+
+\[
+  M_{11} =
+\]
+
+\end{document}
