@@ -1,0 +1,214 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{xcolor}
+\usepackage[skins]{tcolorbox}
+
+\geometry{a4paper,top=20mm,bottom=20mm,left=22mm,right=22mm}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Advanced Machine Learning --- Practice Exam Set A \textbf{Solutions}}
+\fancyfoot[R]{\thepage\ of \pageref{LastPage}}
+
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ELBO}{\mathrm{ELBO}}
+\newcommand{\ans}[1]{\tcbox[colback=yellow!20,colframe=orange!60,size=small]{\textbf{#1}}}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Practice Exam Set A --- Solutions}
+\end{center}
+
+\section*{Part I: Generative Models}
+
+\subsection*{Exercise A --- VAE \hfill \ans{Answer: A}}
+
+With $z'=1$, $\mathbf{x}'=[2,-1]^\top$, $q(z|\mathbf{x}')=\N(z\mid x_1+x_2,1)=\N(z\mid 1,1)$:
+
+\textbf{Reconstruction term:}
+The likelihood mean is $[z',-z']^\top=[1,-1]^\top$.
+\[
+  \ln p(\mathbf{x}'\mid z')=\ln\N([2,-1]^\top\mid[1,-1]^\top,\mathbf{I}_2)
+  =-\tfrac{1}{2}\bigl[(2-1)^2+(-1+1)^2\bigr]-\ln(2\pi)
+  =-\tfrac{1}{2}-\ln(2\pi).
+\]
+
+\textbf{KL term} ($\mu_q=1$, $\sigma_q^2=1$):
+\[
+  \KL[\N(1,1)\|\N(0,1)]=\ln\frac{1}{1}+\frac{1+(1-0)^2}{2\cdot 1}-\frac{1}{2}=0+1-\frac{1}{2}=\frac{1}{2}.
+\]
+
+\[
+  \boxed{\ELBO(\mathbf{x}')=-\tfrac{1}{2}-\ln(2\pi)-\tfrac{1}{2}=-1-\ln(2\pi).}
+\]
+
+\subsection*{Exercise B --- Normalizing Flows \hfill \ans{Answer: B}}
+
+We need $T^{-1}([1,1]^\top)$.  Using the given table: $T_2([1,0]^\top)=[1,1]^\top$, so $T_2^{-1}([1,1]^\top)=[1,0]^\top$. Then $T_1([0,0]^\top)=[1,0]^\top$, so $T_1^{-1}([1,0]^\top)=[0,0]^\top$.
+Hence $\mathbf{u}=[0,0]^\top$.
+
+\textbf{Jacobian determinant:}
+\[
+  \det J_T([0,0]^\top)=\det J_{T_2}(T_1([0,0]^\top))\cdot\det J_{T_1}([0,0]^\top)
+  =\det J_{T_2}([1,0]^\top)\cdot 2 = 3\cdot 2=6.
+\]
+
+\textbf{Base density:} $p_\mathbf{u}([0,0]^\top)=\frac{1}{2\pi}\exp(-\frac{1}{2}(0+0))=\frac{1}{2\pi}$.
+
+\[
+  \boxed{p_\mathbf{x}([1,1]^\top)=\frac{p_\mathbf{u}([0,0]^\top)}{|\det J_T|}=\frac{1/2\pi}{6}=\frac{1}{12\pi}.}
+\]
+
+\subsection*{Exercise C --- DDPM \hfill \ans{Answer: A}}
+
+Compute $\bar\alpha_2=\prod_{t=1}^{2}(1-\beta_t)=(1-\tfrac{1}{2})(1-\tfrac{1}{2})=\tfrac{1}{4}$.
+
+\[
+  \sqrt{\bar\alpha_2}\,\mathbf{x}_0=\tfrac{1}{2}[4,-4]^\top=[2,-2]^\top,
+  \qquad
+  1-\bar\alpha_2=\tfrac{3}{4}.
+\]
+\[
+  \boxed{q(\mathbf{x}_2\mid\mathbf{x}_0=[4,-4]^\top)=\N\!\bigl(\mathbf{x}_2\mid[2,-2]^\top,\,\tfrac{3}{4}\mathbf{I}\bigr).}
+\]
+
+\newpage
+\section*{Part II: Representation Learning}
+
+\subsection*{Exercise D --- Pull-back metric \hfill \ans{Answer: A}}
+
+For $f(\mathbf{x})=W_2\,\mathrm{ReLU}(W_1\mathbf{x}+\mathbf{b}_1)+\mathbf{b}_2$, the Jacobian is
+\[
+  J_\mathbf{x}=W_2\,\underbrace{\mathrm{diag}(\mathbf{1}[W_1\mathbf{x}+\mathbf{b}_1>0])}_{\Lambda_1}\,W_1.
+\]
+Hence $G_\mathbf{x}=J_\mathbf{x}^\top J_\mathbf{x}=(W_2\Lambda_1 W_1)^\top(W_2\Lambda_1 W_1)=W_1^\top\Lambda_1 W_2^\top W_2\Lambda_1 W_1$.
+
+The key distinction: $\Lambda_1$ uses $W_1\mathbf{x}+\mathbf{b}_1$ (with bias), not $W_1\mathbf{x}$ (without bias).
+
+\subsection*{Exercise E --- Curve energy}
+
+\textbf{E.1:} For $f(\mathbf{x})=[x_1^2,\;x_1 x_2,\;x_2]^\top$:
+\[
+  J_\mathbf{x}=\begin{bmatrix}2x_1&0\\x_2&x_1\\0&1\end{bmatrix},
+  \qquad
+  G_\mathbf{x}=J_\mathbf{x}^\top J_\mathbf{x}
+  =\begin{bmatrix}4x_1^2+x_2^2 & x_1 x_2\\x_1 x_2 & x_1^2+1\end{bmatrix}.
+\]
+
+\textbf{E.2:} For $\mathbf{c}_1(t)=t[1,0]^\top$, $\dot{\mathbf{c}}_1=[1,0]^\top$, $G_{\mathbf{c}_1(t)}=\bigl[\begin{smallmatrix}4t^2&0\\0&t^2+1\end{smallmatrix}\bigr]$:
+\[
+  \dot{\mathbf{c}}_1^\top G\,\dot{\mathbf{c}}_1=4t^2,\qquad
+  E(\mathbf{c}_1)=\int_0^1 4t^2\,\mathrm{d}t=\Bigl[\tfrac{4t^3}{3}\Bigr]_0^1=\boxed{\tfrac{4}{3}}.
+\]
+For $\mathbf{c}_2(t)=t[0,1]^\top$, $\dot{\mathbf{c}}_2=[0,1]^\top$, $G_{\mathbf{c}_2(t)}=\bigl[\begin{smallmatrix}t^2&0\\0&1\end{smallmatrix}\bigr]$:
+\[
+  \dot{\mathbf{c}}_2^\top G\,\dot{\mathbf{c}}_2=1,\qquad
+  E(\mathbf{c}_2)=\int_0^1 1\,\mathrm{d}t=\boxed{1}.
+\]
+
+\subsection*{Exercise F --- Riemannian integration}
+
+\textbf{F.1:} $G_\mathbf{x}=\mathrm{diag}(x_2^2,x_1^2)$, so $\det G_\mathbf{x}=x_1^2 x_2^2$, $\sqrt{\det G_\mathbf{x}}=x_1 x_2$ on $[0,1]^2$.
+\[
+  \boxed{\mathrm{d}M(\mathbf{x})=x_1 x_2\,\mathrm{d}x_1\,\mathrm{d}x_2.}
+\]
+
+\textbf{F.2:}
+\[
+  I_1=\int_0^1\!\int_0^1 x_1^2\cdot x_1 x_2\,\mathrm{d}x_1\,\mathrm{d}x_2
+  =\int_0^1 x_1^3\,\mathrm{d}x_1\cdot\int_0^1 x_2\,\mathrm{d}x_2
+  =\frac{1}{4}\cdot\frac{1}{2}=\boxed{\frac{1}{8}}.
+\]
+\[
+  I_2=\int_0^1\!\int_0^1 x_2\cdot x_1 x_2\,\mathrm{d}x_1\,\mathrm{d}x_2
+  =\int_0^1 x_1\,\mathrm{d}x_1\cdot\int_0^1 x_2^2\,\mathrm{d}x_2
+  =\frac{1}{2}\cdot\frac{1}{3}=\boxed{\frac{1}{6}}.
+\]
+
+\subsection*{Exercise G --- ELBO and evidence}
+
+Starting from the definition:
+\begin{align*}
+  \ELBO(\mathbf{x})
+  &= \E_{q(\mathbf{z}|\mathbf{x})}\!\left[\ln\frac{p(\mathbf{x},\mathbf{z})}{q(\mathbf{z}|\mathbf{x})}\right]
+   = \E_q\!\left[\ln\frac{p(\mathbf{z}|\mathbf{x})\,p(\mathbf{x})}{q(\mathbf{z}|\mathbf{x})}\right]
+   &&\text{[factorize $p(\mathbf{x},\mathbf{z})=p(\mathbf{z}|\mathbf{x})p(\mathbf{x})$]}\\
+  &= \ln p(\mathbf{x}) + \E_q\!\left[\ln\frac{p(\mathbf{z}|\mathbf{x})}{q(\mathbf{z}|\mathbf{x})}\right]
+   &&\text{[$\ln p(\mathbf{x})$ constant w.r.t.\ $\mathbf{z}$]}\\
+  &= \ln p(\mathbf{x}) - \KL\!\bigl[q(\mathbf{z}|\mathbf{x})\;\|\;p(\mathbf{z}|\mathbf{x})\bigr].\quad\square
+\end{align*}
+
+\newpage
+\section*{Part III: Graph Models}
+
+\subsection*{Exercise H --- Graph Laplacians}
+
+\textbf{H.1:} From $L_{\mathrm{rw}}$, row $a$: $[1,-1,0,0,0]$ means node $a$ has degree 1 with sole neighbour $b$.
+Row $b$: $[-\frac{1}{2},1,-\frac{1}{2},0,0]$ means $b$ has degree 2, neighbours $a$ and $c$.
+Similarly $c$--$d$, $d$--$e$.  The graph is a \textbf{path} $a$--$b$--$c$--$d$--$e$.
+
+\textbf{H.2:} Transition matrix $T=I-L_{\mathrm{rw}}=D^{-1}A$:
+\begin{center}
+$T_{ab}=1$;\quad $T_{ba}=T_{bc}=\tfrac{1}{2}$;\quad $T_{cb}=T_{cd}=\tfrac{1}{2}$;\quad etc.
+\end{center}
+Starting at $a$: step 1 $\to b$ (prob 1). Step 2: $b\to a$ (prob $\frac12$) or $b\to c$ (prob $\frac12$).
+Step 3:
+\[
+  P(\text{at }b\text{ after 3}) = P(\text{at }a\text{ at step 2})\cdot 1
+                                 + P(\text{at }c\text{ at step 2})\cdot\tfrac{1}{2}
+  = \tfrac{1}{2}\cdot 1 + \tfrac{1}{2}\cdot\tfrac{1}{2}=\boxed{\tfrac{3}{4}}.
+\]
+
+\subsection*{Exercise I --- Weisfeiler-Lehman test}
+
+Graph: triangle $a$--$b$--$c$--$a$ plus pendant $a$--$d$.
+Degrees: $d_a=3$, $d_b=d_c=2$, $d_d=1$.
+
+\textbf{I.1:}
+\begin{itemize}[noitemsep]
+  \item \textbf{A} TRUE: $\ell^{(0)}_a=d_a=3$.
+  \item \textbf{B} FALSE: $\ell^{(0)}_d=d_d=1\neq 2$.
+  \item \textbf{C} TRUE: $\mathcal{N}(b)=\{a,c\}$ and $\mathcal{N}(c)=\{a,b\}$ give multisets $\{3,2\}$ and $\{3,2\}$, so $\ell^{(1)}_b=\ell^{(1)}_c=\mathrm{hash}(\{3,2\})$.
+  \item \textbf{D} FALSE: $\ell^{(1)}_a=\mathrm{hash}(\{2,2,1\})\neq\mathrm{hash}(\{3,2\})=\ell^{(1)}_b$.
+  \item \textbf{E} FALSE: $\ell^{(1)}_d=\mathrm{hash}(\{3\})\neq\mathrm{hash}(\{3,2\})=\ell^{(1)}_b$.
+\end{itemize}
+\ans{True: A, C}
+
+\textbf{I.2:} Round 0 partition: $\{\{a\},\{b,c\},\{d\}\}$. After round 1: $a$ gets $\mathrm{hash}(\{2,2,1\})$, $b$ and $c$ both get $\mathrm{hash}(\{3,2\})$, $d$ gets $\mathrm{hash}(\{3\})$ --- same partition $\{\{a\},\{b,c\},\{d\}\}$.  No new distinctions were made, so the algorithm halts.
+\[
+  \boxed{\text{Number of rounds} = 1.}
+\]
+
+\subsection*{Exercise J --- Shallow embeddings \hfill \ans{Answer: A}}
+
+$\|\mathbf{z}_u-\mathbf{z}_v\|^2=0.25$ with $\mathbf{z}_u=[0,1]^\top$:
+\[
+  (x-0)^2+(y-1)^2=0.25=(0.5)^2.
+\]
+This is a circle of radius $0.5$ centred at $\mathbf{z}_u=[0,1]^\top$, matching option A.
+
+\subsection*{Exercise K --- Message passing}
+
+\textbf{K.1:} Star graph: $\mathcal{N}(a)=\{b,c,d\}$, $\mathcal{N}(b)=\mathcal{N}(c)=\mathcal{N}(d)=\{a\}$.
+\begin{align*}
+  h_a^{(1)}&=1+1\cdot 1+1\cdot(1+1+1)=1+1+3=5,\\
+  h_b^{(1)}&=h_c^{(1)}=h_d^{(1)}=1+1\cdot 1+1\cdot 1=3.\\[4pt]
+  h_a^{(2)}&=1+1\cdot 5+1\cdot(3+3+3)=1+5+9=\boxed{15},\\
+  h_b^{(2)}&=h_c^{(2)}=h_d^{(2)}=1+1\cdot 3+1\cdot 5=\boxed{9}.
+\end{align*}
+
+\textbf{K.2:} $M=w_1 I+w_2 A=I+A$ where $A$ (ordering $a,b,c,d$) has $A_{ab}=A_{ac}=A_{ad}=A_{ba}=A_{ca}=A_{da}=1$, rest 0:
+\[
+  M=\begin{bmatrix}1&1&1&1\\1&1&0&0\\1&0&1&0\\1&0&0&1\end{bmatrix}.
+\]
+
+\end{document}

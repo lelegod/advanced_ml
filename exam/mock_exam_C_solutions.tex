@@ -1,0 +1,212 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{xcolor}
+\usepackage[skins]{tcolorbox}
+
+\geometry{a4paper,top=20mm,bottom=20mm,left=22mm,right=22mm}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Advanced Machine Learning --- Practice Exam Set C \textbf{Solutions}}
+\fancyfoot[R]{\thepage\ of \pageref{LastPage}}
+
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ELBO}{\mathrm{ELBO}}
+\newcommand{\ans}[1]{\tcbox[colback=yellow!20,colframe=orange!60,size=small]{\textbf{#1}}}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Practice Exam Set C --- Solutions}
+\end{center}
+
+\section*{Part I: Generative Models}
+
+\subsection*{Exercise A --- Probabilistic PCA \hfill \ans{Answer: A}}
+
+Using the marginalisation formula $p(\mathbf{x})=\N(\mathbf{x}\mid\mathbf{b},\,\mathbf{w}\mathbf{w}^\top+\mathbf{I})$ with $\mathbf{w}=[2,1]^\top$ and $\mathbf{b}=[0,1]^\top$:
+\[
+  \mathbf{w}\mathbf{w}^\top=\begin{bmatrix}4&2\\2&1\end{bmatrix},\qquad
+  \mathbf{w}\mathbf{w}^\top+\mathbf{I}=\begin{bmatrix}5&2\\2&2\end{bmatrix}.
+\]
+\[
+  \boxed{p(\mathbf{x})=\N\!\Bigl(\mathbf{x}\mid[0,1]^\top,\,\begin{bmatrix}5&2\\2&2\end{bmatrix}\Bigr).}
+\]
+
+\subsection*{Exercise B --- Normalizing flows \hfill \ans{Answer: B}}
+
+$T(\mathbf{u})=\bigl[\begin{smallmatrix}3&0\\0&2\end{smallmatrix}\bigr]\mathbf{u}+[1,-1]^\top$, so $\det J_T=3\cdot 2=6$ and
+$T^{-1}(\mathbf{x})=\tfrac{1}{6}\bigl[\begin{smallmatrix}2&0\\0&3\end{smallmatrix}\bigr](\mathbf{x}-[1,-1]^\top)$.
+
+At $\mathbf{x}=[1,-1]^\top$: $T^{-1}([1,-1]^\top)=[0,0]^\top$.
+$p_\mathbf{u}([0,0]^\top)=\tfrac{1}{2\pi}e^0=\tfrac{1}{2\pi}$.
+\[
+  p_\mathbf{x}([1,-1]^\top)=\frac{p_\mathbf{u}([0,0]^\top)}{|\det J_T|}=\frac{1/2\pi}{6}=\boxed{\frac{1}{12\pi}.}
+\]
+
+\subsection*{Exercise C --- DDPM forward posterior}
+
+First compute $\bar\alpha_1$ and $\bar\alpha_2$:
+\[
+  \bar\alpha_1=1-\beta_1=1-\tfrac{1}{4}=\tfrac{3}{4},\qquad
+  \bar\alpha_2=(1-\beta_1)(1-\beta_2)=\tfrac{3}{4}\cdot\tfrac{2}{3}=\tfrac{1}{2}.
+\]
+
+Apply the forward posterior formula at $t=2$ (so $t-1=1$), $\mathbf{x}_0=[0,0]^\top$, $\mathbf{x}_2=[3,0]^\top$:
+\[
+  \tilde\beta_1=\frac{\beta_2(1-\bar\alpha_1)}{1-\bar\alpha_2}
+  =\frac{\tfrac{1}{3}\cdot\tfrac{1}{4}}{\tfrac{1}{2}}=\frac{1}{6}.
+\]
+\[
+  \tilde\mu_1
+  =\frac{\sqrt{\bar\alpha_1}\,\beta_2}{1-\bar\alpha_2}\,\mathbf{x}_0
+  +\frac{\sqrt{1-\beta_2}\,(1-\bar\alpha_1)}{1-\bar\alpha_2}\,\mathbf{x}_2.
+\]
+Since $\mathbf{x}_0=[0,0]^\top$, the first term vanishes:
+\[
+  \tilde\mu_1
+  =\frac{\sqrt{2/3}\cdot\tfrac{1}{4}}{\tfrac{1}{2}}\,[3,0]^\top
+  =\frac{\sqrt{2/3}}{2}\,[3,0]^\top
+  =\frac{3\sqrt{2/3}}{2}\,[1,0]^\top
+  =\frac{\sqrt{6}}{2}\,[1,0]^\top.
+\]
+\[
+  \boxed{q(\mathbf{x}_1\mid\mathbf{x}_2=[3,0]^\top,\,\mathbf{x}_0=[0,0]^\top)
+  =\N\!\Bigl(\mathbf{x}_1\mid\Bigl[\tfrac{\sqrt{6}}{2},0\Bigr]^\top,\,\tfrac{1}{6}\mathbf{I}\Bigr).}
+\]
+
+\newpage
+\section*{Part II: Representation Learning}
+
+\subsection*{Exercise D --- Pull-back metric}
+
+\textbf{D.1:} For $f(\mathbf{x})=[x_1^2+x_2,\;x_1+x_2^2,\;x_1 x_2]^\top$:
+\[
+  J_\mathbf{x}=\begin{bmatrix}2x_1&1\\1&2x_2\\x_2&x_1\end{bmatrix}.
+\]
+\[
+  G_\mathbf{x}=J^\top J=\begin{bmatrix}
+    (2x_1)^2+1+x_2^2 & 2x_1+2x_2+x_1x_2\\
+    2x_1+2x_2+x_1x_2 & 1+(2x_2)^2+x_1^2
+  \end{bmatrix}
+  =\begin{bmatrix}
+    4x_1^2+x_2^2+1 & 2x_1+2x_2+x_1x_2\\
+    2x_1+2x_2+x_1x_2 & x_1^2+4x_2^2+1
+  \end{bmatrix}.
+\]
+
+\textbf{D.2:} At $\mathbf{x}=[1,0]^\top$:
+\[
+  G\big|_{[1,0]^\top}=\begin{bmatrix}4+0+1&2+0+0\\2+0+0&1+0+1\end{bmatrix}=\boxed{\begin{bmatrix}5&2\\2&2\end{bmatrix}.}
+\]
+
+\subsection*{Exercise E --- Geodesic approximation}
+
+\textbf{E.1 \hfill \ans{Answer: B}}
+The objective $\sum_n\|f(\mathbf{c}_n)-f(\mathbf{c}_{n-1})\|$ is the total Euclidean length of the
+piecewise-linear path in \emph{observation space} $\mathbb{R}^D$, which lies on or near the manifold
+$f(\mathbb{R}^d)$.  Minimising it finds the shortest path \textbf{on the manifold}.
+
+\textbf{E.2 \hfill \ans{Answer: B}}
+Minimising $\sum_n\|\mathbf{c}_n-\mathbf{c}_{n-1}\|$ gives a straight line in the latent space, not
+a geodesic on the manifold.  Since $f$ is nonlinear it generally distorts distances, so the two
+objectives disagree.
+
+\subsection*{Exercise F --- Curve energy}
+
+\textbf{F.1:} For $f(\mathbf{x})=[x_1,\;x_1^2+x_2^2,\;x_2]^\top$:
+\[
+  J_\mathbf{x}=\begin{bmatrix}1&0\\2x_1&2x_2\\0&1\end{bmatrix},\qquad
+  G_\mathbf{x}=J^\top J=\begin{bmatrix}1+4x_1^2&4x_1x_2\\4x_1x_2&4x_2^2+1\end{bmatrix}.
+\]
+
+\textbf{F.2:} For $\mathbf{c}_1(t)=[t,0]^\top$: $G_{\mathbf{c}_1(t)}=\bigl[\begin{smallmatrix}1+4t^2&0\\0&1\end{smallmatrix}\bigr]$,
+$\dot{\mathbf{c}}_1^\top G\dot{\mathbf{c}}_1=1+4t^2$:
+\[
+  E(\mathbf{c}_1)=\int_0^1(1+4t^2)\,\mathrm{d}t=1+\tfrac{4}{3}=\boxed{\tfrac{7}{3}.}
+\]
+For $\mathbf{c}_2(t)=[0,t]^\top$: $G_{\mathbf{c}_2(t)}=\bigl[\begin{smallmatrix}1&0\\0&4t^2+1\end{smallmatrix}\bigr]$,
+$\dot{\mathbf{c}}_2^\top G\dot{\mathbf{c}}_2=4t^2+1$:
+\[
+  E(\mathbf{c}_2)=\int_0^1(4t^2+1)\,\mathrm{d}t=\tfrac{4}{3}+1=\boxed{\tfrac{7}{3}.}
+\]
+By symmetry of $f$ in $x_1$ and $x_2$, $E(\mathbf{c}_1)=E(\mathbf{c}_2)$.
+
+\subsection*{Exercise G --- Neural network reparametrization}
+
+\textbf{G.1:} We need $\alpha w_1\,\mathrm{ReLU}(w_4 x)=w_1\,\mathrm{ReLU}(w_2 x)$ for all $x$.
+For $x>0$ (where $\mathrm{ReLU}$ is active):
+$\alpha w_1 w_4 x = w_1 w_2 x\;\Rightarrow\; w_4=w_2/\alpha$.
+For $x\le 0$: both sides are 0 provided $w_4=w_2/\alpha$ and $\alpha>0$.
+\[
+  \boxed{w_4=w_2/\alpha.}
+\]
+
+\textbf{G.2:} The map $(\alpha w_1, w_2/\alpha)\mapsto f$ gives the same function for every $\alpha>0$.
+Thus the parameters $(w_1,w_2)$ are \textbf{not identifiable}: observations can only recover the
+product $w_1 w_2$, not the individual factors.
+
+\textbf{G.3:} With $\sigma(x)=x$ (linear): $f(x|w_1,w_2)=w_1 w_2 x$.  The same non-identifiability
+persists --- only the product $w_1 w_2$ is identifiable.  The issue is the \emph{scaling symmetry},
+which arises for any activation that is homogeneous (including the identity).
+
+\newpage
+\section*{Part III: Graph Models}
+
+\subsection*{Exercise H --- Shallow embeddings}
+
+\textbf{H.1 \hfill \ans{Answer: A}}
+$P(A_{uv}=1)=0.5\;\Leftrightarrow\;\sigma(\mathbf{z}_u^\top\mathbf{z}_v)=0.5\;\Leftrightarrow\;\mathbf{z}_u^\top\mathbf{z}_v=0$.
+With $\mathbf{z}_u=[1,0]^\top$: $\mathbf{z}_u^\top\mathbf{z}_v=x=0$.  So $\mathbf{z}_v$ lies on the line $x=0$ (the $y$-axis).
+
+\textbf{H.2 \hfill \ans{Answer: A}}
+$\mathbf{z}_u^\top\mathbf{z}_u=4\;\Rightarrow\; P(A_{uu}=1)=\sigma(4)\approx 0.982$.
+$\mathbf{z}_u^\top\mathbf{z}_v=0\;\Rightarrow\; P(A_{uv}=1)=\sigma(0)=0.5$.
+The self-loop $(u,u)$ has higher probability.
+
+\subsection*{Exercise I --- Graph Laplacians and random walks}
+
+\textbf{I.1:} From $L_{\mathrm{rw}}$: row $a$ shows $-D^{-1}A_{ab}=-\frac{1}{3}$ for all $b\in\{b,c,d\}$, so node $a$ has degree 3 with neighbours $b,c,d$.
+Rows $b,c,d$ each show $-D^{-1}A_{?a}=-1$ (degree 1, sole neighbour $a$).
+\textbf{Sketch}: star graph, centre $a$, leaves $b,c,d$.
+
+\textbf{I.2:} Starting at $b$:
+\begin{itemize}[noitemsep]
+  \item Step 1: $b\to a$ with prob 1 (only neighbour).
+  \item Step 2: $a\to b$ with prob $\frac{1}{3}$ (one of three leaves).
+\end{itemize}
+\[
+  p = P(\text{at }b\text{ after 2 steps})=\boxed{\tfrac{1}{3}.}
+\]
+
+\textbf{I.3:} Stationary distribution $\pi_v\propto d_v$:
+$d_a=3$, $d_b=d_c=d_d=1$.
+\[
+  \boldsymbol{\pi}\propto[3,1,1,1]^\top,\quad\text{normalised: }\boldsymbol{\pi}=\tfrac{1}{6}[3,1,1,1]^\top.
+\]
+
+\subsection*{Exercise J --- Graph convolution (star graph)}
+
+\textbf{J.1:} $h[0]=1$, $h[1]=-1$, $\mathbf{x}=[0,1,1,1]^\top$, $A$ = star adjacency (centre $a$).
+\[
+  A\mathbf{x}: \text{ row }a: 0+1+1+1=3;\quad\text{ rows }b,c,d: 0.
+\]
+\[
+  A\mathbf{x}=[3,0,0,0]^\top,\qquad
+  \mathbf{y}=\mathbf{x}-A\mathbf{x}=[0,1,1,1]^\top-[3,0,0,0]^\top=\boxed{[-3,1,1,1]^\top.}
+\]
+
+\textbf{J.2:} $M_{11}=h[0]\lambda_1^0+h[1]\lambda_1^1=1+(-1)(-\sqrt{3})=1+\sqrt{3}$.
+\[
+  \boxed{M_{11}=1+\sqrt{3}.}
+\]
+
+\end{document}

@@ -1,0 +1,219 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{xcolor}
+\usepackage[skins]{tcolorbox}
+
+\geometry{a4paper,top=20mm,bottom=20mm,left=22mm,right=22mm}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Advanced Machine Learning --- Practice Exam Set B \textbf{Solutions}}
+\fancyfoot[R]{\thepage\ of \pageref{LastPage}}
+
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ELBO}{\mathrm{ELBO}}
+\newcommand{\ans}[1]{\tcbox[colback=yellow!20,colframe=orange!60,size=small]{\textbf{#1}}}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Practice Exam Set B --- Solutions}
+\end{center}
+
+\section*{Part I: Generative Models}
+
+\subsection*{Exercise A --- VAE with MoG prior \hfill \ans{Answer: A}}
+
+With $z'=2$, $\mathbf{x}'=[2,-2]^\top$, $q(z|\mathbf{x}')=\N(z\mid x_1-x_2/2,1)=\N(z\mid 3,1)$:
+
+\textbf{Term 1 --- $\ln p(\mathbf{x}'|z'=2)$:} Mean $=[2,-2]^\top$, $\|\mathbf{x}'-\text{mean}\|^2=0$.
+\[
+  \ln p(\mathbf{x}'|z')=\ln\N([2,-2]^\top\mid[2,-2]^\top,\mathbf{I}_2)=0-\ln(2\pi)=-\ln(2\pi).
+\]
+
+\textbf{Term 2 --- $\ln p(z'=2)$:} Both components evaluate to $e^{-2}$ (symmetric about $z=2$):
+\[
+  p(2)=\tfrac{1}{2}\N(2|0,1)+\tfrac{1}{2}\N(2|4,1)
+       =\tfrac{1}{2}\cdot\tfrac{e^{-2}}{\sqrt{2\pi}}+\tfrac{1}{2}\cdot\tfrac{e^{-2}}{\sqrt{2\pi}}
+       =\tfrac{e^{-2}}{\sqrt{2\pi}},
+  \qquad
+  \ln p(2)=-2-\tfrac{1}{2}\ln(2\pi).
+\]
+
+\textbf{Term 3 --- $\ln q(z'=2|\mathbf{x}')$:} $q=\N(z\mid 3,1)$:
+\[
+  \ln q(2|\mathbf{x}')=-\tfrac{(2-3)^2}{2}-\tfrac{1}{2}\ln(2\pi)=-\tfrac{1}{2}-\tfrac{1}{2}\ln(2\pi).
+\]
+
+\textbf{ELBO:}
+\begin{align*}
+  \ELBO &\approx -\ln(2\pi)+\Bigl(-2-\tfrac{1}{2}\ln(2\pi)\Bigr)-\Bigl(-\tfrac{1}{2}-\tfrac{1}{2}\ln(2\pi)\Bigr)\\
+        &= -\ln(2\pi)-2-\tfrac{1}{2}\ln(2\pi)+\tfrac{1}{2}+\tfrac{1}{2}\ln(2\pi)
+         =\boxed{-\ln(2\pi)-\tfrac{3}{2}.}
+\end{align*}
+
+\subsection*{Exercise B --- Normalizing flows (affine coupling)}
+
+\textbf{B.1 \hfill \ans{Answer: C}}
+Inverting $T(\mathbf{u})=[u_1,\;e^{s(u_1)}u_2+t(u_1)]^\top$ gives $u_1=z_1$ and
+$u_2=(z_2-t(z_1))e^{-s(z_1)}$, which is valid for \emph{all} $C^1$ functions $s,t$ since
+$e^{-s}>0$ always.
+
+\textbf{B.2 \hfill \ans{Answer: B}}
+$J_T$ is lower-triangular: $J_T=\bigl[\begin{smallmatrix}1&0\\\cdot&e^{s(u_1)}\end{smallmatrix}\bigr]$,
+so $\det J_T = e^{s(u_1)}$.
+
+\textbf{B.3 \hfill \ans{Answer: A}}
+With $s=0$, $t(u_1)=u_1^2$: $T(\mathbf{u})=[u_1,\;u_2+u_1^2]^\top$.
+$T^{-1}([1,2]^\top)=[1,\;2-1^2]^\top=[1,1]^\top$.
+$\det J_T = e^0=1$.
+\[
+  p_\mathbf{x}([1,2]^\top)=\frac{p_\mathbf{u}([1,1]^\top)}{1}
+  =\frac{1}{2\pi}e^{-(1+1)/2}=\boxed{\frac{e^{-1}}{2\pi}.}
+\]
+
+\subsection*{Exercise C --- DDPM \hfill \ans{Answer: C}}
+
+The forward process $q$ is a Markov chain: $q(\mathbf{x}_t|\mathbf{x}_{t-1},\ldots)=q(\mathbf{x}_t|\mathbf{x}_{t-1})$.
+In the chain $\mathbf{x}_1\!\to\!\mathbf{x}_2\!\to\!\mathbf{x}_3\!\to\!\mathbf{x}_4\!\to\!\mathbf{x}_5$, conditioning on $\mathbf{x}_4$ blocks the path from $\mathbf{x}_3$ to $\mathbf{x}_5$ (d-separation), so $\mathbf{x}_5\perp\mathbf{x}_3|\mathbf{x}_4$.
+Therefore:
+\[
+  q(\mathbf{x}_3|\mathbf{x}_4,\mathbf{x}_1,\mathbf{x}_5)=q(\mathbf{x}_3|\mathbf{x}_4,\mathbf{x}_1).
+\]
+The other options fail: (A) ignores the informative $\mathbf{x}_4$; (B) wrong conditioning set; (D) $\mathbf{x}_5$ is redundant given $\mathbf{x}_4$ but $\mathbf{x}_1$ is not.
+
+\newpage
+\section*{Part II: Representation Learning}
+
+\subsection*{Exercise D --- Pull-back metric (tanh) \hfill \ans{Answer: A}}
+
+For $f(\mathbf{x})=W_2\tanh(W_1\mathbf{x}+\mathbf{b}_1)+\mathbf{b}_2$, by the chain rule:
+\[
+  J_\mathbf{x} = W_2\,\underbrace{\mathrm{diag}(1-\tanh^2(W_1\mathbf{x}+\mathbf{b}_1))}_{\Lambda}\,W_1.
+\]
+\[
+  G_\mathbf{x}=J_\mathbf{x}^\top J_\mathbf{x}=(W_2\Lambda W_1)^\top(W_2\Lambda W_1)
+  =W_1^\top\Lambda W_2^\top W_2\Lambda W_1.
+\]
+($\Lambda$ is symmetric since it is diagonal.)
+
+\subsection*{Exercise E --- Curve energy}
+
+\textbf{E.1:} For $f(\mathbf{x})=[2x_1^2,\;x_1^2+3x_2^2,\;2x_1+x_2^2]^\top$:
+\[
+  J_\mathbf{x}=\begin{bmatrix}4x_1&0\\2x_1&6x_2\\2&2x_2\end{bmatrix}.
+\]
+\[
+  G_\mathbf{x}=J^\top J=\begin{bmatrix}(4x_1)^2+(2x_1)^2+4 & 0+12x_1x_2+4x_2\\
+                                        \cdot & 0+(6x_2)^2+(2x_2)^2\end{bmatrix}
+  =\begin{bmatrix}20x_1^2+4 & 4x_2(3x_1+1)\\4x_2(3x_1+1)& 40x_2^2\end{bmatrix}.
+\]
+
+\textbf{E.2:} For $\mathbf{c}_1(t)=[t,0]^\top$: $G_{\mathbf{c}_1(t)}=\bigl[\begin{smallmatrix}20t^2+4&0\\0&0\end{smallmatrix}\bigr]$,
+$\dot{\mathbf{c}}_1^\top G\dot{\mathbf{c}}_1=20t^2+4$:
+\[
+  E(\mathbf{c}_1)=\int_0^1(20t^2+4)\,\mathrm{d}t=\tfrac{20}{3}+4=\boxed{\tfrac{32}{3}.}
+\]
+For $\mathbf{c}_2(t)=[0,t]^\top$: $G_{\mathbf{c}_2(t)}=\bigl[\begin{smallmatrix}4&0\\0&40t^2\end{smallmatrix}\bigr]$,
+$\dot{\mathbf{c}}_2^\top G\dot{\mathbf{c}}_2=40t^2$:
+\[
+  E(\mathbf{c}_2)=\int_0^1 40t^2\,\mathrm{d}t=\boxed{\tfrac{40}{3}.}
+\]
+
+\subsection*{Exercise F --- Bregman divergence}
+
+For $F(p)=\sum_i p_i\ln p_i$: $\nabla F(q)_i=\frac{\partial}{\partial q_i}\sum_j q_j\ln q_j = 1+\ln q_i$.
+
+\begin{align*}
+  D_F(p,q)&=\textstyle\sum_i p_i\ln p_i-\sum_i q_i\ln q_i-\sum_i(1+\ln q_i)(p_i-q_i)\\
+  &=\textstyle\sum_i p_i\ln p_i-\sum_i q_i\ln q_i
+    -\underbrace{(\sum_i p_i-\sum_i q_i)}_{=\,0}
+    -\sum_i p_i\ln q_i+\sum_i q_i\ln q_i\\
+  &=\textstyle\sum_i p_i\ln p_i-\sum_i p_i\ln q_i
+  =\sum_i p_i\ln\frac{p_i}{q_i}=\KL(p\|q).\quad\square
+\end{align*}
+
+\newpage
+\section*{Part III: Graph Models}
+
+\subsection*{Exercise G --- Graph metrics (path $a$--$b$--$c$--$d$--$e$)}
+
+\textbf{G.1:} For a path graph, no two neighbours of any node are themselves connected, so all clustering coefficients are $\mathbf{0}$:
+\[
+  c_b = 0 \quad \text{(N(b)=\{a,c\}, but no edge $a$--$c$)},\qquad
+  c_a = 0 \quad \text{($d_a=1$, convention)}.
+\]
+
+\textbf{G.2:} From $e_a=(1/\lambda)e_b$ and the given $e_a=0.29$, $e_b=0.50$:
+\[
+  \lambda = \frac{e_b}{e_a}=\frac{0.50}{0.29}\approx 1.72\approx\sqrt{3}.
+\]
+Node $c$ has $\mathcal{N}(c)=\{b,d\}$, and $e_b=e_d=0.50$:
+\[
+  e_c=\frac{1}{\lambda}(e_b+e_d)=\frac{1.00}{1.72}\approx\boxed{0.58.}
+\]
+(Exact: $e_c=1/\sqrt{3}$.)
+
+\subsection*{Exercise H --- Graph Fourier transform and convolution}
+
+Path $a$--$b$--$c$, filter $h[k]=1$ for $0\le k\le 2$.
+
+\textbf{H.1:} Compute $A$ and $A^2$:
+$A=\bigl[\begin{smallmatrix}0&1&0\\1&0&1\\0&1&0\end{smallmatrix}\bigr]$,\;
+$A^2=\bigl[\begin{smallmatrix}1&0&1\\0&2&0\\1&0&1\end{smallmatrix}\bigr]$.
+
+$\mathbf{y}=(I+A+A^2)\mathbf{x}$ with $\mathbf{x}=[1,0,1]^\top$:
+\[
+  I+A+A^2=\begin{bmatrix}2&1&1\\1&3&1\\1&1&2\end{bmatrix},\qquad
+  \mathbf{y}=\begin{bmatrix}2+0+1\\1+0+1\\1+0+2\end{bmatrix}=\boxed{[3,2,3]^\top.}
+\]
+
+\textbf{H.2:} $M=\sum_{k=0}^{2}h[k]\Lambda^k=I+\Lambda+\Lambda^2$ with $\Lambda=\mathrm{diag}(-\sqrt{2},0,\sqrt{2})$:
+\[
+  M=\mathrm{diag}\!\bigl(1+(-\sqrt{2})+2,\;1+0+0,\;1+\sqrt{2}+2\bigr)
+  =\boxed{\mathrm{diag}(3-\sqrt{2},\;1,\;3+\sqrt{2}).}
+\]
+
+\subsection*{Exercise I --- WL test (4-cycle with chord)}
+
+4-cycle $a$--$b$--$c$--$d$--$a$ plus edge $b$--$d$. Degrees: $d_a=d_c=2$, $d_b=d_d=3$.
+
+\textbf{I.1:}
+\begin{itemize}[noitemsep]
+  \item \textbf{A,B} TRUE: $\ell^{(0)}_a=\ell^{(0)}_c=2$ and $\ell^{(0)}_b=\ell^{(0)}_d=3$.
+  \item \textbf{C} TRUE: $\mathcal{N}(a)=\{b,d\}$ and $\mathcal{N}(c)=\{b,d\}$ $\Rightarrow$ same multiset $\{3,3\}$.
+  \item \textbf{D} TRUE: $\mathcal{N}(b)=\{a,c,d\}$ and $\mathcal{N}(d)=\{a,b,c\}$ $\Rightarrow$ same multiset $\{2,2,3\}$.
+  \item \textbf{E} FALSE: $\ell^{(1)}_a=\mathrm{hash}(\{3,3\})\neq\mathrm{hash}(\{2,2,3\})=\ell^{(1)}_b$.
+\end{itemize}
+\ans{True: A, B, C, D}
+
+\textbf{I.2:} Round 0 partition: $\{\{a,c\},\{b,d\}\}$. After round 1 the partition is unchanged (same multisets). \ans{1 round}.
+
+\subsection*{Exercise J --- Message passing (4-cycle, asymmetric features)}
+
+$w_0=0$, $w_1=w_2=1$, $h^{(0)}=[1,2,1,2]^\top$ for $(a,b,c,d)$.
+
+\textbf{J.1:} $\mathcal{N}(a)=\{b,d\}$, $\mathcal{N}(b)=\{a,c\}$, $\mathcal{N}(c)=\{b,d\}$, $\mathcal{N}(d)=\{c,a\}$:
+\begin{align*}
+  h_a^{(1)}&=0+1\cdot 1+1\cdot(2+2)=5,\quad
+  h_b^{(1)}=0+1\cdot 2+1\cdot(1+1)=4,\\
+  h_c^{(1)}&=0+1\cdot 1+1\cdot(2+2)=5,\quad
+  h_d^{(1)}=0+1\cdot 2+1\cdot(1+1)=4.
+\end{align*}
+
+\textbf{J.2:} $M=I+A$ where $A$ is the 4-cycle adjacency (ordering $a,b,c,d$):
+\[
+  M=\begin{bmatrix}1&1&0&1\\1&1&1&0\\0&1&1&1\\1&0&1&1\end{bmatrix}.
+\]
+
+\textbf{J.3:} For identity $h^{(1)}=h^{(0)}$: we need $w_0=0$, $w_1=1$, $w_2=0$.
+
+\end{document}

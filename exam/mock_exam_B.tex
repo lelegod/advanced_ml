@@ -254,19 +254,18 @@ Show that $D_F(p,q)=\KL(p\|q)$, where $\KL(p\|q)=\sum_i p_i\ln(p_i/q_i)$.
 
 \subsection*{Exercise G --- Graph metrics}
 
-Consider a graph with 5 nodes $a, b, c, d, e$ and edges
-$\{a\text{--}b,\; a\text{--}c,\; a\text{--}d,\; b\text{--}c,\; d\text{--}e\}$.
+Consider the \emph{path graph} with 5 nodes $a$--$b$--$c$--$d$--$e$.
 
 The \emph{clustering coefficient} of a node $u$ is defined as
 \[
   c_u = \frac{|\{(v_1,v_2)\in E : v_1,v_2\in\mathcal{N}(u)\}|}{\binom{d_u}{2}}, \tag{9}
 \]
-where $d_u$ is the degree of $u$.
+where $d_u$ is the degree of $u$ (use $c_u=0$ by convention when $d_u<2$).
 
-\textbf{Question G.1:} What are the clustering coefficients of node $a$ and node $b$?
+\textbf{Question G.1:} What are the clustering coefficients of node $b$ and node $a$?
 
 \[
-  c_a = \hspace{5cm} c_b =
+  c_b = \hspace{5cm} c_a =
 \]
 
 Show the main steps.
@@ -274,14 +273,13 @@ Show the main steps.
 \vspace{3cm}
 
 The \emph{eigenvector centrality} satisfies $e_u = \tfrac{1}{\lambda}\sum_{v\in\mathcal{N}(u)}e_v$,
-where $\lambda$ is the largest eigenvalue of the adjacency matrix.  For the above graph, the
-eigenvector centralities of nodes $b, d$ are $e_b=e_d=0.500$ and of nodes $c, e$ are
-$e_c=e_e=0.354$.
+where $\lambda$ is the largest eigenvalue of the adjacency matrix.  For the path graph above,
+$e_a=e_e=0.29$ and $e_b=e_d=0.50$.
 
-\textbf{Question G.2:} What is the eigenvector centrality $e_a$?
+\textbf{Question G.2:} What is the eigenvector centrality $e_c$?
 
 \[
-  e_a =
+  e_c =
 \]
 
 Show the main steps.
