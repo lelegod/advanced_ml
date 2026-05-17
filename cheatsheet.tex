@@ -1,0 +1,596 @@
+\documentclass[8pt,a4paper]{extarticle}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{multicol}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{bm}
+\usepackage{xcolor}
+
+\geometry{
+  a4paper,
+  top=5mm, bottom=5mm,
+  left=5mm, right=5mm,
+  columnsep=3mm
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\abovedisplayskip}{1.5pt}
+\setlength{\belowdisplayskip}{1.5pt}
+\setlength{\abovedisplayshortskip}{0pt}
+\setlength{\belowdisplayshortskip}{0pt}
+
+\newcommand{\sectiontitle}[1]{%
+  \vspace{2pt}%
+  {\small\textbf{\color{blue!70!black}\rule{\linewidth}{0.4pt}\\#1\vspace{-4pt}\\\rule{\linewidth}{0.4pt}}}%
+  \vspace{1pt}%
+}
+\newcommand{\sub}[1]{%
+  \vspace{1pt}%
+  {\footnotesize\textbf{#1}}%
+  \vspace{0.5pt}%
+}
+
+% Shortcuts
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\ELBO}{\mathcal{L}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bsig}{\bm{\sigma}}
+\newcommand{\beps}{\bm{\varepsilon}}
+\newcommand{\bphi}{\bm{\phi}}
+\newcommand{\btheta}{\bm{\theta}}
+\newcommand{\balpha}{\bar{\alpha}}
+
+\pagestyle{empty}
+
+\begin{document}
+\footnotesize
+
+%% ============================================================
+%%  PAGE 1 — MODULE 1: VAE & NORMALIZING FLOWS
+%% ============================================================
+\begin{multicols}{3}
+
+\sectiontitle{KL DIVERGENCE}
+
+\[
+  \KL(p\|q)=\int p(x)\log\frac{p(x)}{q(x)}dx=\E_{x\sim p}\!\left[\log\frac{p(x)}{q(x)}\right]
+\]
+$\KL\geq 0$;\; $\KL=0\Leftrightarrow p=q$;\; asymmetric.
+
+\textbf{Univariate Gaussian KL} (closed form):
+\[
+  \KL\!\bigl[\N(\mu_1,\sigma_1)\|\N(\mu_2,\sigma_2)\bigr]
+  = \log\tfrac{\sigma_2}{\sigma_1} + \tfrac{\sigma_1^2+(\mu_1-\mu_2)^2}{2\sigma_2^2} - \tfrac{1}{2}
+\]
+
+\textbf{VAE KL} (diag.\ $q$ vs.\ $\N(\mathbf{0},\mathbf{I})$):
+\[
+  \KL\!\bigl[\N(\bmu,\mathrm{diag}\,\bsig^2)\|\N(\mathbf{0},\mathbf{I})\bigr]
+  = \tfrac{1}{2}\textstyle\sum_j\!\bigl(\sigma_j^2+\mu_j^2-1-\log\sigma_j^2\bigr)
+\]
+
+\textbf{Multivariate Gaussian KL:}
+\begin{align*}
+  \KL(\N_0\|\N_1) &= \tfrac{1}{2}\Bigl[\log\tfrac{|\Sigma_1|}{|\Sigma_0|}
+  +(\bmu_0-\bmu_1)^\top\Sigma_1^{-1}(\bmu_0-\bmu_1)\\
+  &\qquad+\mathrm{tr}(\Sigma_1^{-1}\Sigma_0)-D\Bigr]
+\end{align*}
+
+\textbf{MLE $=$ KL minimisation:}
+\[
+  \hat{\theta}=\arg\max_\theta\sum_i\log p_\theta(\bx_i)
+  \;\Leftrightarrow\;\arg\min_\theta\KL(p_\mathrm{data}\|p_\theta)
+\]
+
+\sectiontitle{DLVM / VAE}
+
+Generative model: $\bz\sim p(\bz)$, $\bx\sim p_\theta(\bx|\bz)$;\; intractable marginal $p(\bx)=\int p_\theta(\bx|\bz)p(\bz)d\bz$
+
+\textbf{ELBO} (introduce $q_\phi(\bz|\bx)>0$, apply Jensen $\log\E\geq\E\log$):
+\begin{align*}
+  \log p(\bx)
+  &=\log\E_{\bz\sim q_\phi}\!\left[\frac{p_\theta(\bx|\bz)p(\bz)}{q_\phi(\bz|\bx)}\right]\\
+  &\geq\underbrace{\E_{\bz\sim q_\phi}[\log p_\theta(\bx|\bz)]}_{\text{reconstruction}}
+   -\underbrace{\KL(q_\phi(\bz|\bx)\|p(\bz))}_{\text{regularisation}}
+   =:\ELBO
+\end{align*}
+
+\textbf{Gap identity:}
+\[
+  \log p(\bx) = \ELBO(\theta,\phi) + \KL\!\bigl(q_\phi(\bz|\bx)\|p_\theta(\bz|\bx)\bigr)
+\]
+Maximising ELBO maximises evidence and minimises KL to true posterior.
+
+\textbf{Amortised VI (encoder):}
+\[
+  q_\phi(\bz|\bx)=\N(\bz|\bmu_\phi(\bx),\mathrm{diag}\,\bsig_\phi^2(\bx))
+\]
+
+\textbf{Reparameterisation trick:}
+\[
+  \bz = \bmu_\phi(\bx)+\bsig_\phi(\bx)\odot\beps,\quad \beps\sim\N(\mathbf{0},\mathbf{I})
+\]
+\[
+  \nabla_\phi\ELBO
+  \approx \nabla_\phi\log p_\theta(\bx|\bmu_\phi+\bsig_\phi\odot\beps) - \nabla_\phi\KL
+\]
+Low variance. Works for Gaussian/Beta/Gamma; not discrete (use Gumbel-softmax).
+
+\sub{VAE Issues}
+
+\textbf{Posterior collapse:} $q_\phi(\bz|\bx)\to p(\bz)$, decoder ignores $\bz$. Fix: KL warm-up ($\beta$-VAE: weight KL by $\beta\in(0,1)$).
+
+\textbf{Hole problem:} aggregated posterior $q_\phi(\bz)=\tfrac{1}{N}\sum_n q_\phi(\bz|\bx_n)\neq p(\bz)$\; $\Rightarrow$\; holes give bad samples.
+
+\sub{Improving the Prior}
+
+\textbf{Aggregated posterior} (best prior, minimises CE):
+$q_\phi(\bz)=\tfrac{1}{N}\sum_n q_\phi(\bz|\bx_n)$
+
+\textbf{MoG prior:} $p_\lambda(\bz)=\sum_{k=1}^K w_k\,\N(\bz|\bmu_k,\mathrm{diag}\,\bsig_k^2)$
+
+\textbf{VampPrior:} $p_\lambda(\bz)=\tfrac{1}{K}\sum_{k=1}^K q_\phi(\bz|\mathbf{u}_k)$, \; pseudo-inputs $\mathbf{u}_k$ learnable.
+
+\sub{Hierarchical VAE (2-level)}
+
+Bottom-up: $Q(\bz_1,\bz_2|\bx)=q(\bz_2|\bz_1)\,q(\bz_1|\bx)$
+\begin{align*}
+  \ELBO &= \E[\log p(\bx|\bz_1)]\\
+        &-\E\!\left[\log\tfrac{q(\bz_1|\bx)}{p(\bz_1|\bz_2)}\right]
+         -\E\!\left[\KL(q(\bz_2|\bz_1)\|p(\bz_2))\right]
+\end{align*}
+
+\sectiontitle{NORMALIZING FLOWS}
+
+\textbf{Model:} $\bu\sim p_\phi(\bu)$, $\bx=T(\bu)$; $T$ diffeomorphism (bijective, smooth).
+
+\textbf{Change of variables:}
+\[
+  p_\bx(\bx)=p_\bu(T^{-1}(\bx))\,|\det J_{T^{-1}}(\bx)|
+\]
+Inverse function theorem: $J_{T^{-1}}=J_T^{-1}$.
+
+\textbf{Log-likelihood (MLE):}
+\[
+  \ell = \sum_i\bigl[\log p_\phi(T^{-1}(\bx_i)) + \log|\det J_{T^{-1}}(\bx_i)|\bigr]
+\]
+Only need $T^{-1},J_{T^{-1}}$ for MLE; need $T$ for sampling.
+
+\textbf{Composition} $T=T_K\circ\cdots\circ T_1$:
+\[
+  \log|\det J_T|=\sum_{k=1}^K\log|\det J_{T_k}(\bz_{k-1})|
+\]
+
+\sub{Affine Coupling Layer (RealNVP)}
+
+Partition $\bz=(\bz_{1:d},\bz_{d+1:D})$;\; $s,t:\R^d\!\to\!\R^{D-d}$ arbitrary NNs.
+\[
+  \text{\textbf{Fwd:}}\;\bz'_{1:d}=\bz_{1:d},\;\bz'_{d+1:D}=e^{s(\bz_{1:d})}\odot\bz_{d+1:D}+t(\bz_{1:d})
+\]
+\[
+  \text{\textbf{Inv:}}\;\bz_{1:d}=\bz'_{1:d},\;\bz_{d+1:D}=(\bz'_{d+1:D}-t)\odot e^{-s(\bz_{1:d})}
+\]
+\textbf{Jacobian} (triangular $\Rightarrow$ easy $\det$):
+\[
+  J_T=\begin{bmatrix}\mathbf{I}&\mathbf{0}\\\ast&\mathrm{diag}(e^{s(\bz_{1:d})})\end{bmatrix},\;
+  \det J_T=\exp\!\Bigl(\textstyle\sum_i s_i\Bigr)
+\]
+\textbf{Permutation layer:} $|\det J|=1$; needed so all dims transform.
+
+\sub{Flow as VAE Prior}
+
+\begin{align*}
+  \ELBO &= \E_{\bz\sim q_\phi}\bigl[\log p_\theta(\bx|\bz)
+         +\log p_\phi(T^{-1}(\bz))\bigr]\\
+        &-\E\bigl[\log|\det J_T(T^{-1}(\bz))|\bigr]
+         -\E[\log q_\phi]
+\end{align*}
+Prefer flow prior over flow posterior (more expressive model, same cost).
+
+\end{multicols}
+
+\newpage
+
+%% ============================================================
+%%  PAGE 2 — DIFFUSION MODELS & RIEMANNIAN GEOMETRY
+%% ============================================================
+\begin{multicols}{3}
+
+\sectiontitle{DDPM: FORWARD PROCESS}
+
+\textbf{One step:}
+$q(\bz_t|\bz_{t-1})=\N\!\bigl(\bz_t|\sqrt{1-\beta_t}\,\bz_{t-1},\,\beta_t\mathbf{I}\bigr)$
+
+\textbf{Marginal} (closed form, skips intermediate steps):
+\[
+  q(\bz_t|\bx)=\N\!\bigl(\bz_t\,\big|\,\sqrt{\balpha_t}\,\bx,\,(1-\balpha_t)\mathbf{I}\bigr)
+\]
+where $\balpha_t=\prod_{s=1}^t(1-\beta_s)$;\; $\alpha_t=1-\beta_t$.
+
+\textbf{Reparametrisation:}\; $\bz_t=\sqrt{\balpha_t}\,\bx+\sqrt{1-\balpha_t}\,\beps$,\;\; $\beps\sim\N(\mathbf{0},\mathbf{I})$
+
+\textbf{Proof $q(\bz_T|\bx)\to\N(\mathbf{0},\mathbf{I})$:}
+$\balpha_T<(1-\beta_1)^T\xrightarrow{T\to\infty}0\;\Rightarrow\;\sqrt{\balpha_T}\to 0$, $1{-}\balpha_T\to 1$.
+
+\sectiontitle{DDPM: REVERSE \& ELBO}
+
+\textbf{Reverse process (learned):}
+$p_\theta(\bz_{t-1}|\bz_t)=\N(\bz_{t-1}|\bmu_\theta(\bz_t,t),\,\sigma_t^2\mathbf{I})$
+
+\textbf{Forward posterior} (tractable! Gaussian via Bayes):
+\[
+  q(\bz_{t-1}|\bz_t,\bx)=\N(\bz_{t-1}|\tilde{\bmu}_t,\,\tilde{\beta}_t\mathbf{I})
+\]
+\[
+  \tilde{\bmu}_t = \frac{\sqrt{\balpha_{t-1}}\,\beta_t}{1-\balpha_t}\,\bx
+  + \frac{\sqrt{\alpha_t}(1-\balpha_{t-1})}{1-\balpha_t}\,\bz_t
+\]
+\[
+  \tilde{\beta}_t = \frac{1-\balpha_{t-1}}{1-\balpha_t}\,\beta_t
+\]
+
+\textbf{ELBO} (hierarchical VAE — $L_T$ ignorable, $L_0$ reconstruction):
+\begin{align*}
+  \log p(\bx)
+  \geq\;&-\underbrace{\KL(q(\bz_T|\bx)\|p(\bz_T))}_{L_T\approx 0}\\
+  &-\sum_{t=2}^T\underbrace{\E_{q(\bz_t|\bx)}\!\bigl[\KL(q(\bz_{t-1}|\bz_t,\bx)\|p_\theta)\bigr]}_{L_{t-1}}\\
+  &+\underbrace{\E[\log p(\bx|\bz_1)]}_{L_0}
+\end{align*}
+
+\textbf{$L_{t-1}$ closed form} (Gaussian KL, $C$ indep.\ of $\theta$):
+\[
+  L_{t-1} = \frac{1}{2\sigma_t^2}\bigl\|\tilde{\bmu}_t(\bz_t,\bx)-\bmu_\theta(\bz_t,t)\bigr\|^2 + C
+\]
+
+\textbf{Noise prediction} — substituting reparametrisation into $\tilde{\bmu}_t$:
+\[
+  \tilde{\bmu}_t=\frac{1}{\sqrt{\alpha_t}}\!\left(\bz_t-\frac{\beta_t}{\sqrt{1-\balpha_t}}\beps\right)
+  \;\Rightarrow\; \text{train}\;\beps_\theta\approx\beps
+\]
+\textbf{Simplified loss:}
+\[
+  L_{t-1}\approx\bigl\|\beps-\beps_\theta\!\bigl(\sqrt{\balpha_t}\bx+\sqrt{1-\balpha_t}\beps,\,t\bigr)\bigr\|^2
+\]
+
+\sub{Training \& Sampling}
+
+\textbf{Train:}\; $t\sim\mathcal{U}$;\; $\beps\sim\N(\mathbf{0},\mathbf{I})$;\;
+$\bz_t=\sqrt{\balpha_t}\bx+\sqrt{1-\balpha_t}\beps$;\; gradient step on $\|\beps-\beps_\theta(\bz_t,t)\|^2$.
+
+\textbf{Sample:}\; $\bz_T\sim\N(\mathbf{0},\mathbf{I})$; for $t=T,\ldots,1$; $\bm{\eta}\sim\N(\mathbf{0},\mathbf{I})$:
+\[
+  \bz_{t-1}=\frac{1}{\sqrt{\alpha_t}}\!\left(\bz_t-\frac{\beta_t}{\sqrt{1-\balpha_t}}\beps_\theta(\bz_t,t)\right)+\sqrt{\beta_t}\,\bm{\eta}
+\]
+
+\sectiontitle{SDE-BASED DIFFUSION (VP-SDE)}
+
+\textbf{Forward SDE:}\; $d\bx=-\tfrac{1}{2}\beta(t)\bx\,dt+\sqrt{\beta(t)}\,d\mathbf{w}$
+
+\textbf{Reverse SDE} (score $\mathbf{s}=\nabla_{\bx_t}\log p(\bx_t)$):
+\[
+  d\bx=\bigl[f(\bx,t)-g(t)^2\mathbf{s}\bigr]dt+g(t)\,d\bar{\mathbf{w}}
+\]
+
+\textbf{Probability flow ODE} (same marginals, deterministic):
+\[
+  \tfrac{d\bx}{dt}=f(\bx,t)-\tfrac{1}{2}g(t)^2\nabla_{\bx_t}\log p(\bx_t)
+\]
+
+\textbf{Denoising Score Matching} (train $\mathbf{s}_\theta\approx\nabla\log p$):
+\[
+  L_\mathrm{DSM}=\E_{t,\bx_0,\bx_t}\!\bigl[\lambda(t)\|\mathbf{s}_\theta(\bx_t,t)-\nabla_{\bx_t}\log p(\bx_t|\bx_0)\|^2\bigr]
+\]
+Linear SDE $\Rightarrow$ $p(\bx_t|\bx_0)$ Gaussian $\Rightarrow$ tractable.\\
+Key: $\nabla_{\bx_t}\log\N(\bx_t|\bmu,\sigma^2\mathbf{I})=(\bmu-\bx_t)/\sigma^2=-\beps/\sigma$
+
+\sectiontitle{FID}
+
+Embed via Inception-v3; fit $\N(\bmu_r,\Sigma_r)$, $\N(\bmu_g,\Sigma_g)$:
+\[
+  \mathrm{FID}=\|\bmu_r-\bmu_g\|^2+\mathrm{Tr}\!\left(\Sigma_r+\Sigma_g-2(\Sigma_r\Sigma_g)^{1/2}\right)
+\]
+Lower = better. Fréchet (Wasserstein-2) distance between Gaussians.
+
+\begin{center}
+{\tiny\textbf{Model Comparison}\\[1pt]
+\begin{tabular}{lcccc}
+\toprule
+Model&Likelihood&Inv.&Bottleneck&Speed\\
+\midrule
+VAE  &Approx&No &Yes&Fast\\
+Flow &Exact &Yes&No &Fast\\
+DDPM &Approx&No &No &Slow\\
+SBGM &$\sim$Ex.&No/Yes&No&Slow\\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\sectiontitle{MODULE 2: RIEMANNIAN GEOMETRY}
+
+\textbf{Identifiability:} $p_\theta$ identifiable $\Leftrightarrow$ $\theta\mapsto p_\theta$ injective. VAEs/NNs fail: reparametrise $\bz$ without changing $p_\theta(\bx)$.
+
+\textbf{Manifold:} $\mathcal{M}=f(\mathcal{Z})$, $f:\mathcal{Z}\!\subseteq\!\R^M\to\R^D$ smooth, $D>M$.\\
+\textbf{Immersed:} $J_f$ full rank $\forall\bz$. (Embedded $\Rightarrow$ immersed, not vice versa.)\\
+MLP with full-rank weights + smooth activations $\Rightarrow$ immersed.
+
+\textbf{Pullback Riemannian metric:}
+\[
+  M(\bz) = J_f(\bz)^\top J_f(\bz) \in\R^{M\times M}
+\]
+Inner product: $\langle\mathbf{u},\mathbf{v}\rangle_\bz=\mathbf{u}^\top M(\bz)\mathbf{v}$.\\
+Invariant to reparametrisations $\Rightarrow$ identifiable distances.
+
+\textbf{Curve length:}
+\[
+  L(c)=\int_0^1\!\sqrt{\dot{c}^\top M(c)\,\dot{c}}\;dt
+\]
+
+\textbf{Curve energy} (Cauchy-Schwarz $\Rightarrow$ $L(c)^2\leq E(c)$, equality iff const. speed):
+\[
+  E(c)=\int_0^1\!\dot{c}^\top M(c)\,\dot{c}\;dt
+\]
+
+\textbf{Constant-speed geodesic:} energy minimiser with $\|\dot{c}\|_M=\text{const}$.
+\[
+  L(c)^2\leq E(c)\;\text{(C-S)},\;\text{equality iff const. speed}
+\]
+\[
+  \text{Geodesic ODE:}\quad\ddot{c}_i+\sum_{j,k}\Gamma^i_{jk}\dot{c}_j\dot{c}_k=0
+\]
+$\Gamma^i_{jk}=\tfrac{1}{2}M^{im}(\partial_j M_{mk}+\partial_k M_{mj}-\partial_m M_{jk})$ (Christoffel symbols).
+
+\textbf{Boundary value} (start+end) $\to$ may not be unique.\\
+\textbf{Initial value} (point+velocity) $\to$ unique (Picard-Lindelöf).
+
+\textbf{Log map} (Riemannian subtraction):\\
+$\mathrm{Log}_p(q)=$ initial velocity of geodesic $p\to q$ (tangent vector at $p$);\;
+$\|\mathrm{Log}_p(q)\|_{M(p)}=\mathrm{dist}(p,q)$.
+
+\textbf{Exp map} (Riemannian addition):\\
+$\mathrm{Exp}_p(\mathbf{v})=$ endpoint of geodesic from $p$ with init.\ velocity $\mathbf{v}$.
+
+\sub{Noisy Manifold (Stochastic Decoder)}
+
+$p_\theta(\bx|\bz)=\N(\bx|\bmu_\theta(\bz),\mathrm{diag}\,\bsig_\theta^2(\bz))$; rewrite as random projection $\bx=\bmu_\theta(\bz)+\Lambda_\theta^{1/2}\bm{\eta}$.
+\[
+  M(\bz)=J_{\bmu}^\top J_{\bmu}+\underbrace{\E[J_{\Lambda^{1/2}}^\top J_{\Lambda^{1/2}}]}_{\text{uncertainty term}}
+\]
+Uncertainty creates ``walls'' $\Rightarrow$ geodesics follow data. \\
+\textbf{Ensemble:} $K$ decoders; uncertainty = variance across models.
+
+\sub{Information Geometry (Fisher-Rao)}
+
+KL is locally quadratic in $d\theta$ (2nd-order Taylor):
+\[
+  \KL(p(\cdot;\theta)\|p(\cdot;\theta{+}d\theta))\approx\tfrac{1}{2}d\theta^\top F(\theta)\,d\theta
+\]
+\[
+  F(\theta)_{ij}=\E\!\left[\partial_i\log p\cdot\partial_j\log p\right]\;\text{(Fisher info.\ matrix)}
+\]
+Fisher-Rao metric = Riemannian metric on distribution space; reparametrisation invariant.
+
+\sub{Parameter Manifolds}
+
+$G(\theta)=\E_\bx\!\bigl[J_f(\bx;\theta)^\top J_f(\bx;\theta)\bigr]$\\
+\textbf{Kernel manifold:} zero-length curves (same function, diff.\ params).\\
+\textbf{Image manifold:} positive-length curves (diff.\ functions).\\
+UQ: project Gaussian param samples onto kernel $\Rightarrow$ interpolates data.
+
+\end{multicols}
+
+\newpage
+
+%% ============================================================
+%%  PAGE 3 — MODULE 3: GRAPH MODELS
+%% ============================================================
+\begin{multicols}{3}
+
+\sectiontitle{GRAPH DEFINITIONS}
+
+$G=(V,E)$; adjacency $A\in\{0,1\}^{N\times N}$; degree $D=\mathrm{diag}(d_1,\ldots,d_N)$.
+
+\textbf{Laplacians:}
+\[
+  L=D-A,\quad
+  L_\mathrm{sym}=D^{-\frac{1}{2}}LD^{-\frac{1}{2}}=I-D^{-\frac{1}{2}}AD^{-\frac{1}{2}}
+\]
+\[
+  L_\mathrm{rw}=D^{-1}L=I-D^{-1}A
+\]
+All non-negative eigenvalues.
+
+\sectiontitle{GRAPH STATISTICS}
+
+\sub{Eigenvector Centrality}
+
+\[
+  \lambda\mathbf{e}=A\mathbf{e}
+  \qquad
+  e_u=\frac{1}{\lambda}\sum_{v\in\mathcal{N}(u)}e_v
+\]
+Perron-Frobenius: largest eigenvalue is unique; eigenvector non-negative.
+
+\sub{Clustering Coefficient}
+
+\[
+  c_u=\frac{|\{(v_1,v_2)\in E:v_1,v_2\in\mathcal{N}(u)\}|}{\binom{d_u}{2}}
+\]
+$\mathbf{c}=\bigl(D(D-I)\bigr)^{-1}\mathrm{diag}(A^3)$;\; $c_u=[A^3]_{uu}/(d_u(d_u-1))$.
+
+\sub{Weisfeiler-Lehman (WL) Test}
+
+\begin{enumerate}[leftmargin=12pt,nosep,topsep=0pt]
+  \item Init: $\ell_v^{(0)}=d_v$ (degree)
+  \item Update: $\ell_v^{(i)}=\mathrm{hash}(\{\!\{\ell_u^{(i-1)}:u\in\mathcal{N}(v)\}\!\})$
+  \item Summarise: $\mathrm{hash}(\{\!\{\ell_v^{(i)}:v\in V\}\!\})$
+  \item Different summaries $\Rightarrow$ not isomorphic (can fail for some pairs).
+\end{enumerate}
+
+\sectiontitle{MESSAGE PASSING}
+
+\begin{align*}
+  \mathbf{m}_u &= \mathrm{agg}^{(k)}\!\bigl(\{\mathbf{h}_v^{(k)}:v\in\mathcal{N}(u)\}\bigr)\\
+  \mathbf{h}_u^{(k+1)}&=\mathrm{update}^{(k)}\!\bigl(\mathbf{h}_u^{(k)},\mathbf{m}_u\bigr)
+\end{align*}
+
+\textbf{Basic GNN:}
+\[
+  \mathbf{h}_u^{(k)}=\sigma\!\Bigl(W_s\mathbf{h}_u^{(k-1)}+W_n\!\!\sum_{v\in\mathcal{N}(u)}\!\!\mathbf{h}_v^{(k-1)}+\mathbf{b}\Bigr)
+\]
+
+\textbf{Degree-normalised:}
+$\mathbf{m}=\sum_v\mathbf{h}_v/|\mathcal{N}(u)|$\; or\; $\sum_v\mathbf{h}_v/\sqrt{|\mathcal{N}(u)||\mathcal{N}(v)|}$
+
+\textbf{Set pooling} (universal):
+$\mathbf{m}=\mathrm{MLP}_\theta(\sum_v\mathrm{MLP}_\phi(\mathbf{h}_v))$
+
+\textbf{Attention:} $\alpha_{u,v}=\mathrm{softmax}(\mathbf{h}_u^\top W\mathbf{h}_v)$,\; $\mathbf{m}=\sum_v\alpha_{u,v}\mathbf{h}_v$\\
+\textbf{Scaled dot-product:} $\alpha_{u,v}=\mathrm{softmax}(\mathbf{k}_u^\top\mathbf{q}_v/\sqrt{d})$,\; $\mathbf{m}=\sum_v\alpha_{u,v}\mathbf{v}_v$
+
+\textbf{GRU update} (reduce over-smoothing):
+\begin{align*}
+  \mathbf{r}&=\sigma(W_{mr}\mathbf{m}{+}W_{hr}\mathbf{h}{+}\mathbf{b}_r)\\
+  \mathbf{z}&=\sigma(W_{mz}\mathbf{m}{+}W_{hz}\mathbf{h}{+}\mathbf{b}_z)\\
+  \bar{\mathbf{h}}&=\tanh(W_{mh}\mathbf{m}+W_{hh}(\mathbf{r}\odot\mathbf{h})+\mathbf{b}_h)\\
+  \mathbf{h}^{\mathrm{new}}&=\mathbf{z}\odot\bar{\mathbf{h}}+(1{-}\mathbf{z})\odot\mathbf{h}
+\end{align*}
+\textbf{Residual:} $\mathbf{h}^{\mathrm{new}}=\mathbf{h}+\mathrm{update}(\mathbf{h},\mathbf{m})$
+
+\sectiontitle{NODE EMBEDDINGS (SHALLOW)}
+
+Encoder (lookup table): $\mathrm{enc}(u)=\mathbf{z}_u=Z^\top\mathbf{s}_u$ ($\mathbf{s}_u$ one-hot). Transductive only.
+
+\textbf{Decoders:}
+$\mathbf{z}_u^\top\mathbf{z}_v$;\;
+$\sigma(\mathbf{z}_u^\top\mathbf{z}_v+b)$;\;
+$e^{\mathbf{z}_u^\top\mathbf{z}_v}/\sum_w e^{\mathbf{z}_u^\top\mathbf{z}_w}$;\;
+$\|\mathbf{z}_u-\mathbf{z}_v\|^2$
+
+\textbf{MSE loss:}
+\[
+  L_\mathrm{MSE}=\sum_{(u,v)}(S_{uv}-\mathbf{z}_u^\top\mathbf{z}_v)^2=\|S-ZZ^\top\|_F^2
+\]
+
+\textbf{Binary cross-entropy} (note $1-\sigma(x)=\sigma(-x)$):
+\begin{align*}
+  L_\mathrm{BCE} &= -\!\!\sum_{(u,v)\in E}\!\!\log\sigma(\mathbf{z}_u^\top\mathbf{z}_v+b)\\
+                 &\quad-\!\!\!\sum_{(u,v)\notin E}\!\!\!\log\sigma(-\mathbf{z}_u^\top\mathbf{z}_v-b)
+\end{align*}
+
+\textbf{Random walk} (neg.\ sampling):
+\begin{align*}
+  L_\mathrm{RW}=\sum_{(u,v)\in W}\!\Bigl[&-\log\sigma(\mathbf{z}_u^\top\mathbf{z}_v{+}b)\\
+  &-\gamma\E_w[\log\sigma(-\mathbf{z}_u^\top\mathbf{z}_w{-}b)]\Bigr]
+\end{align*}
+
+\sectiontitle{GRAPH FOURIER \& CONVOLUTIONS}
+
+\textbf{Graph convolution} (adjacency as shift):
+\[
+  \mathbf{y}=\Bigl(\sum_{k=0}^K h[k]\,A^k\Bigr)\mathbf{x}
+\]
+
+\textbf{DFT:}\; $\tilde{x}[k]=\sum_n x[n]\,\omega_N^{kn}$,\; $\omega_N=e^{-i2\pi/N}$\\
+Matrix form: $\tilde{\mathbf{x}}=U^H\mathbf{x}$,\; $\mathbf{x}=U\tilde{\mathbf{x}}$,\; $U$ unitary ($U^HU=I$).
+
+\textbf{Convolution theorem} (circ.\ conv.\ $\Leftrightarrow$ freq.\ mult.):
+\[
+  \mathbf{y}=H\mathbf{x}\;\Leftrightarrow\;\tilde{\mathbf{y}}=\tilde{\mathbf{h}}\odot\tilde{\mathbf{x}}
+\]
+\textbf{Proof:}
+\begin{align*}
+\tilde{y}[k]&=\sum_n\sum_\ell x[\ell]\,h[(n{-}\ell)\bmod N]\,\omega_N^{kn}\\
+&=\sum_\ell x[\ell]\omega_N^{k\ell}\!\!\underbrace{\sum_m h[m]\omega_N^{km}}_{\tilde{h}[k]}\!\!=\tilde{x}[k]\tilde{h}[k]
+\end{align*}
+
+\textbf{Graph Fourier:} $A=U\Lambda U^H$.\; Cycle graph eigenvectors $=$ DFT basis.
+
+\textbf{Graph conv.\ via Fourier:}
+\[
+  \mathbf{y}=U\!\Bigl(\sum_{k=0}^K h[k]\Lambda^k\Bigr)\!U^H\mathbf{x}
+\]
+
+\sectiontitle{GNNs AND PROBABILISTIC MODELS}
+
+\textbf{Markov Random Field:}
+\[
+  p(\{x_v\},\{z_v\})\propto\prod_v\Phi(x_v,z_v)\prod_{(u,v)\in E}\Psi(z_u,z_v)
+\]
+
+\textbf{Mean field VI} (factored $q=\prod_v q_v$, min KL — fixed point):
+\begin{align*}
+  \log q_v^{(t+1)}&=c_v+\log\Phi(x_v,z_v)\\
+  &+\sum_{u\in\mathcal{N}(v)}\int q_u^{(t)}\log\Psi\,dz_u
+\end{align*}
+This IS message passing; kernel embeddings $\Rightarrow$ GNN updates.
+
+\sectiontitle{GRAPH VAE}
+
+\textbf{Node-level VAE} (encoder = GNN):
+\begin{align*}
+  &\bmu_Z,\log\bsig_Z=\mathrm{GNN}(A,X),\; Z=\bmu_Z+\beps\odot\bsig_Z\\
+  &P(A_{uv}=1|Z)=\sigma(\mathbf{z}_u^\top\mathbf{z}_v+b),\quad p(Z)=\N(\mathbf{0},\mathbf{I})\\
+  &\ELBO=\E_{q}\!\bigl[\textstyle\sum_{u,v}\log p_\theta(A_{uv}|Z)\bigr]-\KL[q_\phi(Z|G)\|p(Z)]
+\end{align*}
+
+\textbf{Graph-level VAE:}
+\;$\mu_z,\log\sigma_z=\mathrm{GNN\_readout}(A,X)$;\;
+$z=\mu_z+\varepsilon\sigma_z$;\;
+$\tilde{A}=\sigma(\mathrm{MLP}(z))$.
+
+\textbf{GAN:} min$_\theta$max$_\phi\,\E_{x}[\log(1-d_\phi(x))]+\E_z[\log d_\phi(g_\theta(z))]$\\
+Generator: $\tilde{A}=\sigma(\mathrm{MLP}(z))$; Discriminator: permutation-invariant GNN.
+
+\sectiontitle{SYMMETRY IN GEOMETRIC GNNs}
+
+\textbf{Invariant:} $f(T(\mathbf{h}))=f(\mathbf{h})$\qquad
+\textbf{Equivariant:} $f(T(\mathbf{h}))=T'(f(\mathbf{h}))$
+
+Inv.\ ops: $\|\mathbf{v}\|$, $\mathbf{v}_1\cdot\mathbf{v}_2$, $\|\mathbf{v}_1\times\mathbf{v}_2\|$\quad
+Equiv.\ ops: $a\mathbf{v}$, $\mathbf{v}_1+\mathbf{v}_2$, $\mathbf{v}_1\times\mathbf{v}_2$
+
+\sectiontitle{EVALUATION OF GRAPH GENERATION}
+
+\textbf{Total variation:}\; $d(s_\mathrm{gen},s_\mathrm{test})=\sup_x|P(s_\mathrm{gen}\in x)-P(s_\mathrm{test}\in x)|$\\
+Discrete: $d=\tfrac{1}{2}\|p_\mathrm{gen}-p_\mathrm{test}\|_1$. Compare: degree, clust.\ coeff., centrality.
+
+\textbf{Traditional models:}
+\begin{itemize}[leftmargin=12pt,nosep,topsep=0pt]
+  \item \textbf{Erdős-Rényi:} $P(A_{uv}=1)=r$ (edges i.i.d.)
+  \item \textbf{Stochastic block model:} nodes $\to$ blocks; $P(A_{uv}=1)=r_{ij}$
+  \item \textbf{Preferential attachment:} $P(A_{uv}=1)\propto d_v^{(t)}$ (rich-get-richer)
+\end{itemize}
+
+\sectiontitle{KEY IDENTITIES}
+
+\textbf{Jensen:} concave $g$: $g(\E[X])\geq\E[g(X)]$ (e.g.\ $g=\log$)
+
+\textbf{Cauchy-Schwarz:} $(\int\! f\cdot g)^2\leq(\int\! f^2)(\int\! g^2)$;\; equality iff $f\propto g$\;$\Rightarrow L(c)^2\leq E(c)$
+
+\textbf{PPCA bias:} $\hat{\mathbf{b}}=\bar{\mathbf{x}}$\; (set $\partial\ell/\partial\mathbf{b}=0\Rightarrow C^{-1}(\mathbf{b}-\bar{\mathbf{x}})=0$)
+
+\textbf{Triangular $\det$:} $\det A=\prod_i a_{ii}$
+
+\textbf{Jacobian chain rule:} $J_{T\circ S}(x)=J_T(S(x))\cdot J_S(x)$
+
+\textbf{Gaussian score:} $\nabla_\bx\log\N(\bx|\bmu,\sigma^2 I)=(\bmu-\bx)/\sigma^2=-\beps/\sigma$
+
+\textbf{LOTUS:} $\E[f(X)]=\int\! f(x)p(x)dx$ \;(sum over $t$ $\to$ expectation $\sim\mathcal{U}$)
+
+\textbf{Bayes on forward:}
+$q(\bz_{t-1}|\bz_t,\bx)=q(\bz_t|\bz_{t-1})\,q(\bz_{t-1}|\bx)/q(\bz_t|\bx)$ (Gaussian, closed form)
+
+\textbf{Transduction vs induction:} Shallow $=$ transductive. GNN $=$ inductive.
+
+\end{multicols}
+
+\end{document}
